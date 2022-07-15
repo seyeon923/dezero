@@ -4,7 +4,9 @@ class Variable:
 
 
 class Function:
-    def __call__(self, input):
+    def __call__(self, input: Variable):
+        if type(input) is not Variable:
+            raise TypeError(f'input type must be {Variable.__name__} type')
         x = input.data
         y = self.forward(x)
         output = Variable(y)
