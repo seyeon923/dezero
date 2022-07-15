@@ -1,4 +1,4 @@
-from __init__ import Function, Variable
+from . import Function, Variable
 
 import numpy as np
 
