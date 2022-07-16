@@ -4,20 +4,20 @@ import numpy as np
 
 
 class Square(Function):
-    def forward(self, x):
+    def _forward(self, x):
         return x ** 2
 
-    def backward(self, gy):
+    def _backward(self, gy):
         x = self.input.data
         gx = 2 * x * gy
         return gx
 
 
 class Exp(Function):
-    def forward(self, x):
+    def _forward(self, x):
         return np.exp(x)
 
-    def backward(self, gy):
+    def _backward(self, gy):
         x = self.input.data
         gx = np.exp(x) * gy
         return gx
@@ -54,6 +54,5 @@ if __name__ == '__main__':
     assert A.input == x
 
     y = square(exp(square(x)))
-    y.grad = np.array(1.)
     y.backward()
     print(x.grad)
