@@ -23,10 +23,15 @@ class Exp(Function):
         return gx
 
 
-if __name__ == '__main__':
-    square = Square()
-    exp = Exp()
+def square(x):
+    return Square()(x)
 
+
+def exp(x):
+    return Exp()(x)
+
+
+if __name__ == '__main__':
     assert square(Variable(np.array(10))).data == 100
     assert np.isclose(exp(Variable(np.array(1))).data, np.exp(1))
 
@@ -48,6 +53,7 @@ if __name__ == '__main__':
     assert a.creator == A
     assert A.input == x
 
+    y = square(exp(square(x)))
     y.grad = np.array(1.)
     y.backward()
     print(x.grad)
