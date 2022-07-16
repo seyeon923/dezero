@@ -64,16 +64,31 @@ class Variable:
 
 
 class Function:
+    def __init__(self):
+        self.__input = None
+        self.__output = None
+
     def __call__(self, input: Variable):
         if type(input) is not Variable:
             raise TypeError(f'input type must be {Variable.__name__} type')
+
         x = input.data
         y = self.forward(x)
         output = Variable(y)
         output.set_creator(self)
-        self.input = input
-        self.output = output
+
+        self.__input = input
+        self.__output = output
         return output
+
+    def get_intput(self):
+        return self.__input
+
+    def get_output(self):
+        return self.__output
+
+    input = property(get_intput)
+    output = property(get_output)
 
     def _forward(self, x):
         raise NotImplementedError()
