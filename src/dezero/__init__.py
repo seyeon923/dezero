@@ -3,12 +3,6 @@ __all__ = ['Variable', 'Function', 'functions']
 import numpy as np
 
 
-def as_array(x):
-    if np.isscalar(x):
-        return np.array(x)
-    return x
-
-
 class Variable:
     def __init__(self, data):
         self.data = data
@@ -38,10 +32,11 @@ class Variable:
 
     @data.setter
     def data(self, data):
-        data = as_array(data)
-        if data is not None and not isinstance(data, np.ndarray):
-            raise TypeError(
-                f'{Variable.__name__}.data must be numpy.ndarray or None')
+        if data is not None:
+            data = self.__as_array(data)
+            if not isinstance(data, np.ndarray):
+                raise TypeError(
+                    f'{Variable.__name__}.data must be numpy.ndarray or None')
 
         self.__data = data
 
@@ -51,9 +46,11 @@ class Variable:
 
     @grad.setter
     def grad(self, grad):
-        if grad is not None and not isinstance(grad, np.ndarray):
-            raise TypeError(
-                f'{Variable.__name__}.grad must be numpy.ndarray or None')
+        if grad is not None:
+            grad = self.__as_array(grad)
+            if not isinstance(grad, np.ndarray):
+                raise TypeError(
+                    f'{Variable.__name__}.grad must be numpy.ndarray or None')
 
         self.__grad = grad
 
@@ -68,6 +65,11 @@ class Variable:
                 f'{Variable.__name__}.creator must be {Function.__name__} or None')
 
         self.__creator = creator
+
+    def __as_array(self, x):
+        if np.isscalar(x):
+            return np.array(x)
+        return x
 
 
 class Function:
@@ -97,19 +99,11 @@ class Function:
     input = property(get_intput)
     output = property(get_output)
 
-    def _forward(self, x):
-        raise NotImplementedError()
-
     def forward(self, x):
-        """Do not overwrite this method, instead overwrite `_forward` method"""
-        return as_array(self._forward(x))
-
-    def _backward(self, gy):
         raise NotImplementedError()
 
     def backward(self, gy):
-        """Do not overwrite this method, instead overwrite `_backword` method"""
-        return as_array(self._backward(gy))
+        raise NotImplementedError()
 
 
 if __name__ == '__main__':

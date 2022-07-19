@@ -4,20 +4,20 @@ import numpy as np
 
 
 class Square(Function):
-    def _forward(self, x):
+    def forward(self, x):
         return x ** 2
 
-    def _backward(self, gy):
+    def backward(self, gy):
         x = self.input.data
         gx = 2 * x * gy
         return gx
 
 
 class Exp(Function):
-    def _forward(self, x):
+    def forward(self, x):
         return np.exp(x)
 
-    def _backward(self, gy):
+    def backward(self, gy):
         x = self.input.data
         gx = np.exp(x) * gy
         return gx
