@@ -3,6 +3,12 @@ __all__ = ['Variable', 'Function', 'functions']
 import numpy as np
 
 
+def as_array(x):
+    if np.isscalar(x):
+        return np.array(x)
+    return x
+
+
 class Variable:
     def __init__(self, data):
         self.data = data
@@ -32,6 +38,7 @@ class Variable:
 
     @data.setter
     def data(self, data):
+        data = as_array(data)
         if data is not None and not isinstance(data, np.ndarray):
             raise TypeError(
                 f'{Variable.__name__}.data must be numpy.ndarray or None')
@@ -95,19 +102,14 @@ class Function:
 
     def forward(self, x):
         """Do not overwrite this method, instead overwrite `_forward` method"""
-        return self.__as_array(self._forward(x))
+        return as_array(self._forward(x))
 
     def _backward(self, gy):
         raise NotImplementedError()
 
     def backward(self, gy):
         """Do not overwrite this method, instead overwrite `_backword` method"""
-        return self.__as_array(self._backward(gy))
-
-    def __as_array(self, x):
-        if np.isscalar(x):
-            return np.array(x)
-        return x
+        return as_array(self._backward(gy))
 
 
 if __name__ == '__main__':
