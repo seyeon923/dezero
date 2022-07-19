@@ -9,9 +9,6 @@ class Variable:
         self.grad = None
         self.creator = None
 
-    def set_creator(self, func):
-        self.creator = func
-
     def backward(self):
         if self.grad is None:
             self.grad = np.ones_like(self.data)
@@ -84,7 +81,7 @@ class Function:
         x = input.data
         y = self.forward(x)
         output = Variable(y)
-        output.set_creator(self)
+        output.creator = self
 
         self.__input = input
         self.__output = output
