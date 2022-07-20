@@ -23,13 +23,35 @@ class SquareTest(unittest.TestCase):
         y = square(x)
         y.backward()
         expected = np.array(6.)
-        self.assertEqual(x.grad, expected)
+        self.assertAlmostEqual(x.grad, expected)
 
     def test_gradient_check(self):
         x = Variable(np.random.rand(1))
         y = square(x)
         y.backward()
         num_grad = numerical_diff(square, x)
+        self.assertTrue(np.allclose(x.grad, num_grad))
+
+
+class ExpTest(unittest.TestCase):
+    def test_forward(self):
+        x = Variable(np.array(2.))
+        y = exp(x)
+        expected = np.exp(np.array(2.))
+        self.assertEqual(y.data, expected)
+
+    def test_backward(self):
+        x = Variable(np.array(3.))
+        y = exp(x)
+        y.backward()
+        expected = np.exp(np.array(3.))
+        self.assertAlmostEqual(x.grad, expected)
+
+    def test_gradient_check(self):
+        x = Variable(np.random.rand(1))
+        y = exp(x)
+        y.backward()
+        num_grad = numerical_diff(exp, x)
         self.assertTrue(np.allclose(x.grad, num_grad))
 
 
