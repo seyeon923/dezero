@@ -1,6 +1,5 @@
 __all__ = ['Variable', 'Function', 'functions']
 
-from typing import Iterable
 import numpy as np
 
 
@@ -18,11 +17,16 @@ class Variable:
 
         while funcs:
             func = funcs.pop()
-            x, y = func.input, func.output
-            x.grad = func.backward(y.grad)
+            gys = [output.grad for output in func.outputs]
+            gxs = func.backward(*gys)
+            if not isinstance(gxs, tuple):
+                gxs = (gxs, )
 
-            if x.creator:
-                funcs.append(x.creator)
+            for x, gx in zip(func.inputs, gxs):
+                x.grad = gx
+
+                if x.creator is not None:
+                    funcs.append(x.creator)
 
     @property
     def data(self):
@@ -75,13 +79,14 @@ class Function:
         self.__inputs = None
         self.__outputs = None
 
-    def __call__(self, inputs: Iterable[Variable]):
-        if not self.__is_iterable_of_type(inputs, Variable):
+    def __call__(self, *inputs: Variable):
+        if not self.__is_iterable_of_variable(inputs):
             raise TypeError(
-                f'inputs type must be iterable of {Variable.__name__}')
-
+                f'{Function.__name__} is only can be called with arguments of {Variable.__name__}')
         xs = [x.data for x in inputs]
-        ys = self.forward(xs)
+        ys = self.forward(*xs)
+        if not isinstance(ys, tuple):
+            ys = (ys,)
         outputs = [Variable(y) for y in ys]
 
         for output in outputs:
@@ -89,7 +94,7 @@ class Function:
 
         self.__inputs = inputs
         self.__outputs = outputs
-        return outputs
+        return outputs if len(outputs) > 1 else outputs[0]
 
     def get_intputs(self):
         return self.__inputs
@@ -106,10 +111,10 @@ class Function:
     def backward(self, gys):
         raise NotImplementedError()
 
-    def __is_iterable_of_type(self, iterable, type):
+    def __is_iterable_of_variable(self, iterable):
         try:
             for item in iterable:
-                if type(item) is not type:
+                if type(item) is not Variable:
                     return False
             return True
         except:

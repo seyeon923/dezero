@@ -3,12 +3,20 @@ from . import Function, Variable
 import numpy as np
 
 
+class Add(Function):
+    def forward(self, x0, x1):
+        return (x0 + x1,)
+
+    def backward(self, gy):
+        return gy, gy
+
+
 class Square(Function):
     def forward(self, x):
         return x ** 2
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = 2 * x * gy
         return gx
 
@@ -18,9 +26,13 @@ class Exp(Function):
         return np.exp(x)
 
     def backward(self, gy):
-        x = self.input.data
+        x = self.inputs[0].data
         gx = np.exp(x) * gy
         return gx
+
+
+def add(x0, x1):
+    return Add()(x0, x1)
 
 
 def square(x):
@@ -32,6 +44,8 @@ def exp(x):
 
 
 if __name__ == '__main__':
+    assert np.isclose(add(Variable(2.), Variable(3.)).data, 5.)
+
     assert square(Variable(np.array(10))).data == 100
     assert np.isclose(exp(Variable(np.array(1))).data, np.exp(1))
 
@@ -47,12 +61,20 @@ if __name__ == '__main__':
     y = C(b)
 
     assert y.creator == C
-    assert C.input == b
+    assert C.inputs == (b,)
     assert b.creator == B
-    assert B.input == a
+    assert B.inputs == (a,)
     assert a.creator == A
-    assert A.input == x
+    assert A.inputs == (x,)
 
     y = square(exp(square(x)))
     y.backward()
-    print(x.grad)
+    assert np.isclose(x.grad, 3.2974425)
+
+    x = Variable(2.)
+    y = Variable(3.)
+    z = add(square(x), square(y))
+    z.backward()
+    assert np.isclose(z.data, 13.)
+    assert np.isclose(x.grad, 4.)
+    assert np.isclose(y.grad, 6.)
