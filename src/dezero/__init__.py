@@ -1,5 +1,6 @@
 __all__ = ['Variable', 'Function', 'functions']
 
+from typing import Iterable
 import numpy as np
 
 
@@ -71,36 +72,48 @@ class Variable:
 
 class Function:
     def __init__(self):
-        self.__input = None
-        self.__output = None
+        self.__inputs = None
+        self.__outputs = None
 
-    def __call__(self, input: Variable):
-        if type(input) is not Variable:
-            raise TypeError(f'input type must be {Variable.__name__} type')
+    def __call__(self, inputs: Iterable[Variable]):
+        if not self.__is_iterable_of_type(inputs, Variable):
+            raise TypeError(
+                f'inputs type must be iterable of {Variable.__name__}')
 
-        x = input.data
-        y = self.forward(x)
-        output = Variable(y)
-        output.creator = self
+        xs = [x.data for x in inputs]
+        ys = self.forward(xs)
+        outputs = [Variable(y) for y in ys]
 
-        self.__input = input
-        self.__output = output
-        return output
+        for output in outputs:
+            output.creator = self
 
-    def get_intput(self):
-        return self.__input
+        self.__inputs = inputs
+        self.__outputs = outputs
+        return outputs
 
-    def get_output(self):
-        return self.__output
+    def get_intputs(self):
+        return self.__inputs
 
-    input = property(get_intput)
-    output = property(get_output)
+    def get_outputs(self):
+        return self.__outputs
 
-    def forward(self, x):
+    inputs = property(get_intputs)
+    outputs = property(get_outputs)
+
+    def forward(self, xs):
         raise NotImplementedError()
 
-    def backward(self, gy):
+    def backward(self, gys):
         raise NotImplementedError()
+
+    def __is_iterable_of_type(self, iterable, type):
+        try:
+            for item in iterable:
+                if type(item) is not type:
+                    return False
+            return True
+        except:
+            return False
 
 
 if __name__ == '__main__':
