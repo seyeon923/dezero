@@ -9,6 +9,9 @@ class Variable:
         self.grad = None
         self.creator = None
 
+    def cleargrad(self):
+        self.grad = None
+
     def backward(self):
         if self.grad is None:
             self.grad = np.ones_like(self.data)

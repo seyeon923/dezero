@@ -85,7 +85,7 @@ if __name__ == '__main__':
     assert y.grad == 1.
     assert np.isclose(x.grad, 2., 1e-12)
 
-    x = Variable(3.)
+    x.cleargrad()
     y = add(add(x, x), x)
     y.backward()
     assert y.grad == 1.
