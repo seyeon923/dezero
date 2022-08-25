@@ -75,6 +75,18 @@ if __name__ == '__main__':
     y = Variable(3.)
     z = add(square(x), square(y))
     z.backward()
-    assert np.isclose(z.data, 13.)
-    assert np.isclose(x.grad, 4.)
-    assert np.isclose(y.grad, 6.)
+    assert np.isclose(z.data, 13., atol=1e-12)
+    assert np.isclose(x.grad, 4., atol=1e-12)
+    assert np.isclose(y.grad, 6., atol=1e-12)
+
+    x = Variable(3.)
+    y = add(x, x)
+    y.backward()
+    assert y.grad == 1.
+    assert np.isclose(x.grad, 2., 1e-12)
+
+    x = Variable(3.)
+    y = add(add(x, x), x)
+    y.backward()
+    assert y.grad == 1.
+    assert np.isclose(x.grad, 3., atol=1e-12)
