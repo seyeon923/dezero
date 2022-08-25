@@ -90,3 +90,11 @@ if __name__ == '__main__':
     y.backward()
     assert y.grad == 1.
     assert np.isclose(x.grad, 3., atol=1e-12)
+
+    x = Variable(2.)
+    a = square(x)
+    y = add(square(a), square(a))
+    y.backward()
+    assert y.grad == 1
+    assert np.isclose(y.data, 32., atol=1e-12)
+    assert np.isclose(x.grad, 64., atol=1e-12)

@@ -1,6 +1,7 @@
 __all__ = ['Variable', 'Function', 'functions']
 
 import numpy as np
+from collections import deque
 
 
 class Variable:
@@ -16,10 +17,18 @@ class Variable:
         if self.grad is None:
             self.grad = np.ones_like(self.data)
 
-        funcs = [self.creator]
+        funcs = deque()
+        seen_set = set()
+
+        def add_func(f):
+            if f not in seen_set:
+                funcs.append(f)
+                seen_set.add(f)
+
+        add_func(self.creator)
 
         while funcs:
-            func = funcs.pop()
+            func = funcs.popleft()
             gys = [output.grad for output in func.outputs]
             gxs = func.backward(*gys)
             if not isinstance(gxs, tuple):
@@ -32,7 +41,7 @@ class Variable:
                     x.grad += gx
 
                 if x.creator is not None:
-                    funcs.append(x.creator)
+                    add_func(x.creator)
 
     @property
     def data(self):
