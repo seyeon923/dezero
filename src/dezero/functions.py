@@ -82,20 +82,20 @@ if __name__ == '__main__':
 
     x = Variable(3.)
     y = add(x, x)
-    y.backward()
+    y.backward(retain_grad=True)
     assert y.grad == 1.
     assert np.isclose(x.grad, 2., 1e-12)
 
     x.cleargrad()
     y = add(add(x, x), x)
-    y.backward()
+    y.backward(retain_grad=True)
     assert y.grad == 1.
     assert np.isclose(x.grad, 3., atol=1e-12)
 
     x = Variable(2.)
     a = square(x)
     y = add(square(a), square(a))
-    y.backward()
+    y.backward(retain_grad=True)
     assert y.grad == 1
     assert np.isclose(y.data, 32., atol=1e-12)
     assert np.isclose(x.grad, 64., atol=1e-12)
@@ -105,3 +105,23 @@ if __name__ == '__main__':
         print(f'collected {gc.collect()} objects')
         x = Variable(np.random.randn(10000))
         y = square(square(square(x)))
+
+    x0 = Variable(1.)
+    x1 = Variable(1.)
+    t = add(x0, x1)
+    y = add(x0, t)
+    y.backward(retain_grad=True)
+    assert y.grad == 1.
+    assert np.isclose(t.grad, 1., atol=1e-12)
+    assert np.isclose(x0.grad, 2., atol=1e-12)
+    assert np.isclose(x1.grad, 1., atol=1e-12)
+
+    x0 = Variable(1.)
+    x1 = Variable(1.)
+    t = add(x0, x1)
+    y = add(x0, t)
+    y.backward(retain_grad=False)
+    assert y.grad is None
+    assert t.grad is None
+    assert np.isclose(x0.grad, 2., atol=1e-12)
+    assert np.isclose(x1.grad, 1., atol=1e-12)
