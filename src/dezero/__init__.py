@@ -29,10 +29,13 @@ class Config:
 
 
 class Variable:
-    def __init__(self, data):
+    def __init__(self, data, name=None):
         self.data = data
         self.grad = None
         self.creator = None
+        if name is not None and not isinstance(name, str):
+            raise TypeError('Variable.name must be str')
+        self.__name = name
 
     def cleargrad(self):
         self.grad = None
@@ -71,6 +74,11 @@ class Variable:
                 for y in func.outputs:
                     y().grad = None
 
+    def get_name(self):
+        return self.__name
+
+    name = property(get_name)
+
     @property
     def data(self):
         return self.__data
@@ -78,10 +86,7 @@ class Variable:
     @data.setter
     def data(self, data):
         if data is not None:
-            data = self.__as_array(data)
-            if not isinstance(data, np.ndarray):
-                raise TypeError(
-                    f'{Variable.__name__}.data must be numpy.ndarray or None')
+            data = np.array(data)
 
         self.__data = data
 
@@ -110,6 +115,22 @@ class Variable:
                 f'{Variable.__name__}.creator must be {Function.__name__} or None')
 
         self.__creator = creator
+
+    @property
+    def shape(self):
+        return self.data.shape
+
+    @property
+    def ndim(self):
+        return self.data.ndim
+
+    @property
+    def size(self):
+        return self.data.size
+
+    @property
+    def dtype(self):
+        return self.data.dtype
 
     def __as_array(self, x):
         if np.isscalar(x):
@@ -180,3 +201,26 @@ if __name__ == '__main__':
     with disable_backprob():
         assert Config.enable_backprob == False
     assert Config.enable_backprob == True
+
+    x = Variable(1.)
+    assert x.shape == ()
+    assert x.ndim == 0
+    assert x.size == 1
+    assert np.issubdtype(x.dtype, np.floating)
+    x = Variable([1., 2.])
+    assert x.shape == (2,)
+    assert x.ndim == 1
+    assert x.size == 2
+    assert np.issubdtype(x.dtype, np.floating)
+    x = Variable([[1, 2], [3, 4], [5, 6]])
+    assert x.shape == (3, 2)
+    assert x.ndim == 2
+    assert x.size == 6
+    assert np.issubdtype(x.dtype, np.integer)
+
+    x = Variable(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                 dtype=np.float64).reshape((1, 3, 3)))
+    assert x.shape == (1, 3, 3)
+    assert x.ndim == 3
+    assert x.size == 9
+    assert x.dtype == np.float64
