@@ -28,6 +28,107 @@ class Config:
     enable_backprob = True
 
 
+class Function:
+    def __init__(self):
+        self.__inputs = None
+        self.__outputs = None
+
+    def __call__(self, *inputs):
+        if not self.__is_iterable_of_variable(inputs):
+            raise TypeError(
+                f'{Function.__name__} is only can be called with arguments of {Variable.__name__}')
+        xs = [x.data for x in inputs]
+        ys = self.forward(*xs)
+        if not isinstance(ys, tuple):
+            ys = (ys,)
+        outputs = [Variable(y) for y in ys]
+
+        if Config.enable_backprob:
+            for output in outputs:
+                output.creator = self
+
+            self.__inputs = inputs
+            self.__outputs = [weakref.ref(output) for output in outputs]
+
+        return outputs if len(outputs) > 1 else outputs[0]
+
+    def get_intputs(self):
+        return self.__inputs
+
+    def get_outputs(self):
+        return self.__outputs
+
+    inputs = property(get_intputs)
+    outputs = property(get_outputs)
+
+    def forward(self, xs):
+        raise NotImplementedError()
+
+    def backward(self, gys):
+        raise NotImplementedError()
+
+    def __is_iterable_of_variable(self, iterable):
+        try:
+            for item in iterable:
+                if type(item) is not Variable:
+                    return False
+            return True
+        except:
+            return False
+
+
+class Add(Function):
+    def forward(self, x0, x1):
+        return (x0 + x1,)
+
+    def backward(self, gy):
+        return gy, gy
+
+
+class Sub(Function):
+    def forward(self, x0, x1):
+        return x0 - x1
+
+    def backward(self, gy):
+        return gy, -gy
+
+
+class Mul(Function):
+    def forward(self, x0, x1):
+        return x0 * x1
+
+    def backward(self, gy):
+        x0 = self.inputs[0].data
+        x1 = self.inputs[1].data
+        return gy * x1, gy * x0
+
+
+class Div(Function):
+    def forward(self, x0, x1):
+        return x0 / x1
+
+    def backward(self, gy):
+        x0 = self.inputs[0].data
+        x1 = self.inputs[1].data
+        return gy / x1, -gy * x0 / (x1 * x1)
+
+
+def add(x0, x1):
+    return Add()(x0, x1)
+
+
+def sub(x0, x1):
+    return Sub()(x0, x1)
+
+
+def mul(x0, x1):
+    return Mul()(x0, x1)
+
+
+def div(x0, x1):
+    return Div()(x0, x1)
+
+
 class Variable:
     def __init__(self, data, name=None):
         self.data = data
@@ -158,101 +259,7 @@ class Variable:
         return x
 
 
-class Function:
-    def __init__(self):
-        self.__inputs = None
-        self.__outputs = None
-
-    def __call__(self, *inputs: Variable):
-        if not self.__is_iterable_of_variable(inputs):
-            raise TypeError(
-                f'{Function.__name__} is only can be called with arguments of {Variable.__name__}')
-        xs = [x.data for x in inputs]
-        ys = self.forward(*xs)
-        if not isinstance(ys, tuple):
-            ys = (ys,)
-        outputs = [Variable(y) for y in ys]
-
-        if Config.enable_backprob:
-            for output in outputs:
-                output.creator = self
-
-            self.__inputs = inputs
-            self.__outputs = [weakref.ref(output) for output in outputs]
-
-        return outputs if len(outputs) > 1 else outputs[0]
-
-    def get_intputs(self):
-        return self.__inputs
-
-    def get_outputs(self):
-        return self.__outputs
-
-    inputs = property(get_intputs)
-    outputs = property(get_outputs)
-
-    def forward(self, xs):
-        raise NotImplementedError()
-
-    def backward(self, gys):
-        raise NotImplementedError()
-
-    def __is_iterable_of_variable(self, iterable):
-        try:
-            for item in iterable:
-                if type(item) is not Variable:
-                    return False
-            return True
-        except:
-            return False
-
-
-if __name__ == '__main__':
-    x = Variable(np.array(1.))
-    x = Variable(None)
-
-    Config.enable_backprob = False
-
-    with enable_backprob():
-        assert Config.enable_backprob == True
-    assert Config.enable_backprob == False
-
-    Config.enable_backprob = True
-    with disable_backprob():
-        assert Config.enable_backprob == False
-    assert Config.enable_backprob == True
-
-    x = Variable(1.)
-    assert x.shape == ()
-    assert x.ndim == 0
-    assert x.size == 1
-    assert np.issubdtype(x.dtype, np.floating)
-
-    x = Variable([1., 2.])
-    assert x.shape == (2,)
-    assert x.ndim == 1
-    assert x.size == 2
-    assert np.issubdtype(x.dtype, np.floating)
-    assert len(x) == 2
-
-    x = Variable([[1, 2], [3, 4], [5, 6]])
-    assert x.shape == (3, 2)
-    assert x.ndim == 2
-    assert x.size == 6
-    assert np.issubdtype(x.dtype, np.integer)
-    assert len(x) == 3
-
-    x = Variable(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9],
-                 dtype=np.float64).reshape((1, 3, 3)))
-    assert x.shape == (1, 3, 3)
-    assert x.ndim == 3
-    assert x.size == 9
-    assert x.dtype == np.float64
-    assert len(x) == 1
-
-    print(x)
-    print(repr(x))
-
-    x = Variable(3.)
-    print(x)
-    print(repr(x))
+Variable.__add__ = add
+Variable.__sub__ = sub
+Variable.__mul__ = mul
+Variable.__truediv__ = div

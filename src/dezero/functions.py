@@ -1,25 +1,11 @@
-from . import Function, Variable, Config
+from . import (Function, Variable, Config, Add, Mul, add, sub,
+               mul, div, enable_backprob, disable_backprob)
 
 import numpy as np
 import gc
 
-
-class Add(Function):
-    def forward(self, x0, x1):
-        return (x0 + x1,)
-
-    def backward(self, gy):
-        return gy, gy
-
-
-class Mul(Function):
-    def forward(self, x0, x1):
-        return x0 * x1
-
-    def backward(self, gy):
-        x0 = self.inputs[0].data
-        x1 = self.inputs[1].data
-        return gy * x1, gy * x0
+Add = Add
+Mul = Mul
 
 
 class Square(Function):
@@ -42,12 +28,9 @@ class Exp(Function):
         return gx
 
 
-def add(x0, x1):
-    return Add()(x0, x1)
-
-
-def mul(x0, x1):
-    return Mul()(x0, x1)
+add = add
+mul = mul
+div = div
 
 
 def square(x):
@@ -59,6 +42,55 @@ def exp(x):
 
 
 if __name__ == '__main__':
+    x = Variable(np.array(1.))
+    x = Variable(None)
+
+    Config.enable_backprob = False
+
+    with enable_backprob():
+        assert Config.enable_backprob == True
+    assert Config.enable_backprob == False
+
+    Config.enable_backprob = True
+    with disable_backprob():
+        assert Config.enable_backprob == False
+    assert Config.enable_backprob == True
+
+    x = Variable(1.)
+    assert x.shape == ()
+    assert x.ndim == 0
+    assert x.size == 1
+    assert np.issubdtype(x.dtype, np.floating)
+
+    x = Variable([1., 2.])
+    assert x.shape == (2,)
+    assert x.ndim == 1
+    assert x.size == 2
+    assert np.issubdtype(x.dtype, np.floating)
+    assert len(x) == 2
+
+    x = Variable([[1, 2], [3, 4], [5, 6]])
+    assert x.shape == (3, 2)
+    assert x.ndim == 2
+    assert x.size == 6
+    assert np.issubdtype(x.dtype, np.integer)
+    assert len(x) == 3
+
+    x = Variable(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9],
+                 dtype=np.float64).reshape((1, 3, 3)))
+    assert x.shape == (1, 3, 3)
+    assert x.ndim == 3
+    assert x.size == 9
+    assert x.dtype == np.float64
+    assert len(x) == 1
+
+    print(x)
+    print(repr(x))
+
+    x = Variable(3.)
+    print(x)
+    print(repr(x))
+
     assert np.isclose(add(Variable(2.), Variable(3.)).data, 5.)
 
     assert square(Variable(np.array(10))).data == 100
@@ -165,3 +197,31 @@ if __name__ == '__main__':
     assert np.isclose(a.grad, 2., atol=1e-12)
     assert np.isclose(b.grad, 3., atol=1e-12)
     assert np.isclose(c.grad, 1., atol=1e-12)
+
+    a = Variable(3.)
+    b = Variable(2.)
+    c = Variable(1.)
+    y = a*b + c
+    y.backward()
+
+    assert np.isclose(y.data, 7., atol=1e-12)
+    assert np.isclose(a.grad, 2., atol=1e-12)
+    assert np.isclose(b.grad, 3., atol=1e-12)
+    assert np.isclose(c.grad, 1., atol=1e-12)
+
+    a = Variable(1.)
+    b = Variable(3.)
+    y = a/b
+    y.backward()
+
+    assert np.isclose(b.grad, -1/9, atol=1e-12)
+
+    a = Variable(2.)
+    b = Variable(3.)
+    c = Variable(4.)
+    y = a - b*c
+    y.backward()
+
+    assert a.grad == 1.
+    assert np.isclose(b.grad, -4., atol=1e-12)
+    assert np.isclose(c.grad, -3., atol=1e-12)
