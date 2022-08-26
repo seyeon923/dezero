@@ -233,3 +233,19 @@ if __name__ == '__main__':
     x = Variable(2.)
     y = x + 3.
     assert np.isclose(y.data, 5., atol=1e-12)
+
+    y = 3. + x
+    assert np.isclose(y.data, 5., atol=1e-12)
+
+    y = 3. - x
+    assert np.isclose(y.data, 1., atol=1e-12)
+
+    y = 3. * x
+    assert np.isclose(y.data, 6., atol=1e-12)
+
+    y = 3. / x
+    assert np.isclose(y.data, 3/2, atol=1e-12)
+
+    x = Variable([1.])
+    y = np.array([3.]) / x
+    assert np.isclose(y.data, 3., atol=1e-12)

@@ -126,6 +126,8 @@ def div(x0, x1):
 
 
 class Variable:
+    __array_priority__ = 200
+
     def __init__(self, data, name=None):
         self.data = data
         self.grad = None
@@ -256,6 +258,10 @@ class Variable:
 
 
 Variable.__add__ = add
+Variable.__radd__ = add
 Variable.__sub__ = sub
+Variable.__rsub__ = lambda self, other: sub(other, self)
 Variable.__mul__ = mul
+Variable.__rmul__ = mul
 Variable.__truediv__ = div
+Variable.__rtruediv__ = lambda self, other: div(other, self)
