@@ -132,6 +132,26 @@ class Variable:
     def dtype(self):
         return self.data.dtype
 
+    def __len__(self):
+        return len(self.data)
+
+    def __str__(self):
+        name = ''
+        if self.name:
+            name = f"'{self.name}'"
+
+        if self.ndim > 1:
+            numpy_str = f'\n{repr(self.data)}'
+        else:
+            numpy_str = repr(self.data)
+        return f'<dezero.Variable {name} shape={self.shape} dtype={self.dtype}, numpy={numpy_str}>'
+
+    def __repr__(self):
+        if self.data is None:
+            return 'Variable(None)'
+        p = str(self.data).replace('\n', '\n' + ' ' * 9)
+        return f'Variable({p})'
+
     def __as_array(self, x):
         if np.isscalar(x):
             return np.array(x)
@@ -207,16 +227,20 @@ if __name__ == '__main__':
     assert x.ndim == 0
     assert x.size == 1
     assert np.issubdtype(x.dtype, np.floating)
+
     x = Variable([1., 2.])
     assert x.shape == (2,)
     assert x.ndim == 1
     assert x.size == 2
     assert np.issubdtype(x.dtype, np.floating)
+    assert len(x) == 2
+
     x = Variable([[1, 2], [3, 4], [5, 6]])
     assert x.shape == (3, 2)
     assert x.ndim == 2
     assert x.size == 6
     assert np.issubdtype(x.dtype, np.integer)
+    assert len(x) == 3
 
     x = Variable(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9],
                  dtype=np.float64).reshape((1, 3, 3)))
@@ -224,3 +248,11 @@ if __name__ == '__main__':
     assert x.ndim == 3
     assert x.size == 9
     assert x.dtype == np.float64
+    assert len(x) == 1
+
+    print(x)
+    print(repr(x))
+
+    x = Variable(3.)
+    print(x)
+    print(repr(x))
