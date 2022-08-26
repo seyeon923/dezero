@@ -1,6 +1,7 @@
 from . import Function, Variable
 
 import numpy as np
+import gc
 
 
 class Add(Function):
@@ -98,3 +99,9 @@ if __name__ == '__main__':
     assert y.grad == 1
     assert np.isclose(y.data, 32., atol=1e-12)
     assert np.isclose(x.grad, 64., atol=1e-12)
+
+    gc.collect()
+    for i in range(10):
+        print(f'collected {gc.collect()} objects')
+        x = Variable(np.random.randn(10000))
+        y = square(square(square(x)))

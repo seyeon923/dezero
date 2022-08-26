@@ -1,6 +1,7 @@
 __all__ = ['Variable', 'Function', 'functions']
 
 import numpy as np
+import weakref
 from collections import deque
 
 
@@ -29,7 +30,7 @@ class Variable:
 
         while funcs:
             func = funcs.popleft()
-            gys = [output.grad for output in func.outputs]
+            gys = [output().grad for output in func.outputs]
             gxs = func.backward(*gys)
             if not isinstance(gxs, tuple):
                 gxs = (gxs, )
@@ -108,7 +109,7 @@ class Function:
             output.creator = self
 
         self.__inputs = inputs
-        self.__outputs = outputs
+        self.__outputs = [weakref.ref(output) for output in outputs]
         return outputs if len(outputs) > 1 else outputs[0]
 
     def get_intputs(self):
