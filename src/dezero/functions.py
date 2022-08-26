@@ -108,11 +108,11 @@ if __name__ == '__main__':
     y = C(b)
 
     assert y.creator == C
-    assert C.inputs == (b,)
+    assert C.inputs[0] == b
     assert b.creator == B
-    assert B.inputs == (a,)
+    assert B.inputs[0] == a
     assert a.creator == A
-    assert A.inputs == (x,)
+    assert A.inputs[0] == x
 
     y = square(exp(square(x)))
     y.backward()
@@ -225,3 +225,11 @@ if __name__ == '__main__':
     assert a.grad == 1.
     assert np.isclose(b.grad, -4., atol=1e-12)
     assert np.isclose(c.grad, -3., atol=1e-12)
+
+    x = Variable(2.)
+    y = x + np.array(3.)
+    assert np.isclose(y.data, 5., atol=1e-12)
+
+    x = Variable(2.)
+    y = x + 3.
+    assert np.isclose(y.data, 5., atol=1e-12)

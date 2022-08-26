@@ -28,15 +28,20 @@ class Config:
     enable_backprob = True
 
 
+def as_variable(obj):
+    if isinstance(obj, Variable):
+        return obj
+    return Variable(obj)
+
+
 class Function:
     def __init__(self):
         self.__inputs = None
         self.__outputs = None
 
     def __call__(self, *inputs):
-        if not self.__is_iterable_of_variable(inputs):
-            raise TypeError(
-                f'{Function.__name__} is only can be called with arguments of {Variable.__name__}')
+        inputs = [as_variable(input) for input in inputs]
+
         xs = [x.data for x in inputs]
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
@@ -66,15 +71,6 @@ class Function:
 
     def backward(self, gys):
         raise NotImplementedError()
-
-    def __is_iterable_of_variable(self, iterable):
-        try:
-            for item in iterable:
-                if type(item) is not Variable:
-                    return False
-            return True
-        except:
-            return False
 
 
 class Add(Function):
