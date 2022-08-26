@@ -12,6 +12,16 @@ class Add(Function):
         return gy, gy
 
 
+class Mul(Function):
+    def forward(self, x0, x1):
+        return x0 * x1
+
+    def backward(self, gy):
+        x0 = self.inputs[0].data
+        x1 = self.inputs[1].data
+        return gy * x1, gy * x0
+
+
 class Square(Function):
     def forward(self, x):
         return x ** 2
@@ -34,6 +44,10 @@ class Exp(Function):
 
 def add(x0, x1):
     return Add()(x0, x1)
+
+
+def mul(x0, x1):
+    return Mul()(x0, x1)
 
 
 def square(x):
@@ -138,3 +152,16 @@ if __name__ == '__main__':
     assert y.creator is None
     assert f.inputs is None
     assert f.outputs is None
+
+    Config.enable_backprob = True
+
+    a = Variable(3.)
+    b = Variable(2.)
+    c = Variable(1.)
+    y = add(mul(a, b), c)
+    y.backward()
+
+    assert np.isclose(y.data, 7., atol=1e-12)
+    assert np.isclose(a.grad, 2., atol=1e-12)
+    assert np.isclose(b.grad, 3., atol=1e-12)
+    assert np.isclose(c.grad, 1., atol=1e-12)
