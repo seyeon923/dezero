@@ -1,4 +1,4 @@
-from . import Function, Variable
+from . import Function, Variable, Config
 
 import numpy as np
 import gc
@@ -125,3 +125,16 @@ if __name__ == '__main__':
     assert t.grad is None
     assert np.isclose(x0.grad, 2., atol=1e-12)
     assert np.isclose(x1.grad, 1., atol=1e-12)
+
+    Config.enable_backprob = True
+    x = Variable(np.ones((100, 100, 100)))
+    y = square(square(square(x)))
+    y.backward()
+
+    Config.enable_backprob = False
+    x = Variable(np.ones((100, 100, 100)))
+    f = Square()
+    y = square(f(square(x)))
+    assert y.creator is None
+    assert f.inputs is None
+    assert f.outputs is None

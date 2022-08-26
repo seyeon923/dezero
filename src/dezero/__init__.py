@@ -2,7 +2,30 @@ __all__ = ['Variable', 'Function', 'functions']
 
 import numpy as np
 import weakref
+import contextlib
 from collections import deque
+
+
+@contextlib.contextmanager
+def using_config(name: str, value):
+    old_value = getattr(Config, name)
+    setattr(Config, name, value)
+    try:
+        yield
+    finally:
+        setattr(Config, name, old_value)
+
+
+def disable_backprob():
+    return using_config('enable_backprob', False)
+
+
+def enable_backprob():
+    return using_config('enable_backprob', True)
+
+
+class Config:
+    enable_backprob = True
 
 
 class Variable:
@@ -109,11 +132,13 @@ class Function:
             ys = (ys,)
         outputs = [Variable(y) for y in ys]
 
-        for output in outputs:
-            output.creator = self
+        if Config.enable_backprob:
+            for output in outputs:
+                output.creator = self
 
-        self.__inputs = inputs
-        self.__outputs = [weakref.ref(output) for output in outputs]
+            self.__inputs = inputs
+            self.__outputs = [weakref.ref(output) for output in outputs]
+
         return outputs if len(outputs) > 1 else outputs[0]
 
     def get_intputs(self):
@@ -144,3 +169,14 @@ class Function:
 if __name__ == '__main__':
     x = Variable(np.array(1.))
     x = Variable(None)
+
+    Config.enable_backprob = False
+
+    with enable_backprob():
+        assert Config.enable_backprob == True
+    assert Config.enable_backprob == False
+
+    Config.enable_backprob = True
+    with disable_backprob():
+        assert Config.enable_backprob == False
+    assert Config.enable_backprob == True
