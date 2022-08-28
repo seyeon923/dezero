@@ -217,3 +217,14 @@ assert y.data == -2.
 x = Variable(2.)
 y = x**3
 assert np.isclose(y.data, 8., atol=1e-12)
+
+a = Variable(1.)
+b = square(a)
+c = square(b)
+d = square(b)
+e = c + d
+f = c + e
+g = square(f)
+assert np.isclose(g.data, 9., atol=1e-12)
+g.backward()
+assert np.isclose(a.grad, 72., atol=1e-12)

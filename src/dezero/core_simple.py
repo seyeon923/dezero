@@ -1,6 +1,7 @@
 import numpy as np
 import weakref
 import contextlib
+import heapq
 from collections import deque
 
 
@@ -33,9 +34,11 @@ def as_variable(obj):
 
 
 class Function:
-    def __init__(self):
+    def __init__(self, name=None):
         self.__inputs = None
         self.__outputs = None
+        self.__generation = None
+        self.__name = name
 
     def __call__(self, *inputs):
         inputs = [as_variable(input) for input in inputs]
@@ -45,6 +48,8 @@ class Function:
         if not isinstance(ys, tuple):
             ys = (ys,)
         outputs = [as_variable(y) for y in ys]
+
+        self.__generation = max([x.generation for x in inputs])
 
         if Config.enable_backprob:
             for output in outputs:
@@ -61,8 +66,16 @@ class Function:
     def get_outputs(self):
         return self.__outputs
 
+    def get_generation(self):
+        return self.__generation
+
+    def get_name(self):
+        return self.__name
+
     inputs = property(get_intputs)
     outputs = property(get_outputs)
+    generation = property(get_generation)
+    name = property(get_name)
 
     def forward(self, xs):
         raise NotImplementedError()
@@ -159,6 +172,7 @@ class Variable:
         self.data = data
         self.grad = None
         self.creator = None
+        self.__generation = 0
         if name is not None and not isinstance(name, str):
             raise TypeError('Variable.name must be str')
         self.__name = name
@@ -170,18 +184,22 @@ class Variable:
         if self.grad is None:
             self.grad = np.ones_like(self.data)
 
-        funcs = deque()
+        funcs = []  # (-generation, input_idx, func)
         seen_set = set()
 
+        input_idx = 0
+
         def add_func(f):
+            nonlocal input_idx
             if f not in seen_set:
-                funcs.append(f)
                 seen_set.add(f)
+                heapq.heappush(funcs, (-f.generation, input_idx, f))
+                input_idx += 1
 
         add_func(self.creator)
 
         while funcs:
-            func = funcs.popleft()
+            _, _, func = heapq.heappop(funcs)
             gys = [output().grad for output in func.outputs]
             gxs = func.backward(*gys)
             if not isinstance(gxs, tuple):
@@ -204,6 +222,10 @@ class Variable:
         return self.__name
 
     name = property(get_name)
+
+    @property
+    def generation(self):
+        return self.__generation
 
     @property
     def data(self):
@@ -236,9 +258,11 @@ class Variable:
 
     @creator.setter
     def creator(self, creator):
-        if creator is not None and not isinstance(creator, Function):
-            raise TypeError(
-                f'{Variable.__name__}.creator must be {Function.__name__} or None')
+        if creator is not None:
+            self.__generation = creator.generation + 1
+            if not isinstance(creator, Function):
+                raise TypeError(
+                    f'{Variable.__name__}.creator must be {Function.__name__} or None')
 
         self.__creator = creator
 
