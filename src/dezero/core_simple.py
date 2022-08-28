@@ -44,7 +44,7 @@ class Function:
         ys = self.forward(*xs)
         if not isinstance(ys, tuple):
             ys = (ys,)
-        outputs = [Variable(y) for y in ys]
+        outputs = [as_variable(y) for y in ys]
 
         if Config.enable_backprob:
             for output in outputs:
