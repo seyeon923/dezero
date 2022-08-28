@@ -49,9 +49,8 @@ class Function:
             ys = (ys,)
         outputs = [as_variable(y) for y in ys]
 
-        self.__generation = max([x.generation for x in inputs])
-
         if Config.enable_backprob:
+            self.__generation = max([x.generation for x in inputs])
             for output in outputs:
                 output.creator = self
 
