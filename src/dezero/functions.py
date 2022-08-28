@@ -253,3 +253,7 @@ if __name__ == '__main__':
     x = Variable(2.)
     y = -x
     assert y.data == -2.
+
+    x = Variable(2.)
+    y = x**3
+    assert np.isclose(y.data, 8., atol=1e-12)

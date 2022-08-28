@@ -117,6 +117,23 @@ class Neg(Function):
         return -gy
 
 
+class Pow(Function):
+    def __init__(self, c):
+        self.__c = c
+
+    def forward(self, x):
+        return x ** self.__c
+
+    def backward(self, gy):
+        x = self.inputs[0].data
+        c = self.__c
+        return c * x ** (c-1) * gy
+
+
+def pow(x, c):
+    return Pow(c)(x)
+
+
 def neg(x):
     return Neg()(x)
 
@@ -278,3 +295,4 @@ Variable.__rmul__ = mul
 Variable.__truediv__ = div
 Variable.__rtruediv__ = lambda self, other: div(other, self)
 Variable.__neg__ = neg
+Variable.__pow__ = pow
