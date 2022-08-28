@@ -109,6 +109,18 @@ class Div(Function):
         return gy / x1, -gy * x0 / (x1 * x1)
 
 
+class Neg(Function):
+    def forward(self, x):
+        return -x
+
+    def backward(self, gy):
+        return -gy
+
+
+def neg(x):
+    return Neg()(x)
+
+
 def add(x0, x1):
     return Add()(x0, x1)
 
@@ -265,3 +277,4 @@ Variable.__mul__ = mul
 Variable.__rmul__ = mul
 Variable.__truediv__ = div
 Variable.__rtruediv__ = lambda self, other: div(other, self)
+Variable.__neg__ = neg

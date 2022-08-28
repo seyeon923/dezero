@@ -249,3 +249,7 @@ if __name__ == '__main__':
     x = Variable([1.])
     y = np.array([3.]) / x
     assert np.isclose(y.data, 3., atol=1e-12)
+
+    x = Variable(2.)
+    y = -x
+    assert y.data == -2.
