@@ -1,5 +1,5 @@
-from . import (Function, Variable, Config, Add, Mul, add, sub,
-               mul, div, enable_backprob, disable_backprob)
+from .core_simple import (Function, Variable, Config, Add, Mul, add, sub,
+                          mul, div, pow, neg, enable_backprob, disable_backprob)
 
 import numpy as np
 import gc
@@ -29,8 +29,11 @@ class Exp(Function):
 
 
 add = add
+sub = sub
 mul = mul
 div = div
+neg = neg
+pow = pow
 
 
 def square(x):
