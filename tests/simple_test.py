@@ -37,7 +37,7 @@ assert np.issubdtype(x.dtype, np.integer)
 assert len(x) == 3
 
 x = Variable(np.array([1, 2, 3, 4, 5, 6, 7, 8, 9],
-                      dtype=np.float64).reshape((1, 3, 3)))
+                      dtype=np.float64).reshape((1, 3, 3)), name='x')
 assert x.shape == (1, 3, 3)
 assert x.ndim == 3
 assert x.size == 9
