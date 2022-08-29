@@ -2,7 +2,6 @@ import numpy as np
 import weakref
 import contextlib
 import heapq
-from collections import deque
 
 
 @contextlib.contextmanager
