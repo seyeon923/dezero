@@ -1,8 +1,7 @@
-from .core_simple import (Function, Variable, Config, Add, Mul, Sub, Div, Neg, Pow, add, sub,
-                          mul, div, pow, neg, enable_backprob, disable_backprob)
+from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
+                          mul, div, pow, neg)
 
 import numpy as np
-import gc
 
 Add = Add
 Sub = Sub

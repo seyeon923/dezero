@@ -1,6 +1,7 @@
 from src.dezero import *
 from src.dezero.functions import *
 import numpy as np
+import gc
 
 x = Variable(np.array(1.))
 x = Variable(None)

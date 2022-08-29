@@ -1,6 +1,7 @@
 import unittest
 
 from src.dezero.functions import *
+from src.dezero import *
 
 
 def numerical_diff(f, x, eps=1e-4):
