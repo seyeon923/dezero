@@ -1,11 +1,11 @@
 __all__ = ['Variable', 'Function', 'functions', 'using_config',
            'enable_backprob', 'disable_backprob', 'as_variable', 'Config']
 
-from . import functions
+__is_simple_core = True
 
-_is_simple_core = True
+from . import functions  # nopep8
 
-if _is_simple_core:
+if __is_simple_core:
     from .core_simple import Variable
     from .core_simple import Function
     from .core_simple import Config

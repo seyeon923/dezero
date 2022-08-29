@@ -1,5 +1,10 @@
-from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
-                          mul, div, pow, neg)
+from . import __is_simple_core
+
+if __is_simple_core:
+    from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
+                              mul, div, pow, neg)
+else:
+    raise NotImplementedError('core module not implemented')
 
 import numpy as np
 
