@@ -1,6 +1,8 @@
 __all__ = ['Variable', 'Function', 'functions', 'using_config',
            'enable_backprob', 'disable_backprob', 'as_variable', 'Config']
 
+from . import functions
+
 _is_simple_core = True
 
 if _is_simple_core:
