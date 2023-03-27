@@ -173,7 +173,7 @@ class Variable:
         self.__generation = 0
         if name is not None and not isinstance(name, str):
             raise TypeError('Variable.name must be str')
-        self.__name = name
+        self.name = name
 
     def cleargrad(self):
         self.grad = None
@@ -219,7 +219,17 @@ class Variable:
     def get_name(self):
         return self.__name
 
-    name = property(get_name)
+    def set_name(self, name):
+        if name is None:
+            self.__name = None
+            return
+
+        if not isinstance(name, str):
+            raise TypeError('name has to be str')
+
+        self.__name = name
+
+    name = property(get_name, set_name)
 
     @property
     def generation(self):
