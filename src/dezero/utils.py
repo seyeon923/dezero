@@ -1,8 +1,12 @@
 from . import Variable, Function
 
-import numpy as np
 from string import Template
 from io import StringIO
+import tempfile
+import os
+import traceback
+import sys
+import subprocess
 
 __DOT_VAR_TEMPLATE = Template(
     '${id} [label="${label}", color=orange, style=filled]\n')
@@ -62,11 +66,41 @@ def get_dot_graph(output: Variable, verbose=True):
     return f'digraph g {{\n{sio.getvalue()}}}'
 
 
+def plot_dot_graph(output: Variable, verbose=True, to_file='graph.png'):
+    dot_graph = get_dot_graph(output, verbose=verbose)
+
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', delete=False) as f:
+        f.write(dot_graph)
+
+    try:
+        ext = os.path.splitext(to_file)[1][1:]
+        subprocess.run(['dot', f.name, '-T', ext, '-o', to_file], shell=True,
+                       stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError as ex:
+        stderr = ex.stderr
+
+        if isinstance(stderr, bytes):
+            stderr = ex.stderr.decode('utf-8')
+
+        print(stderr, file=sys.stderr)
+        print(
+            f'Failed to run command "{ex.cmd}"(return code = {ex.returncode})', file=sys.stderr)
+    except Exception:
+        traceback.print_exc()
+    finally:
+        os.unlink(f.name)
+
+
 if __name__ == '__main__':
-    x0 = Variable(1.0, name='x0')
-    x1 = Variable(1.0, name='x1')
+    def goldstein(x, y):
+        return (1 + (x + y + 1) ** 2 * (19 - 14*x + 3*x**2 - 14*y + 6*x*y + 3*y**2)) * \
+            (30 + (2*x - 3*y)**2 * (18 - 32*x + 12*x**2 + 48*y - 36*x*y + 27*y**2))
 
-    y = x0 + x1
-    y.name = 'y'
+    x = Variable(1.0, name='x')
+    y = Variable(1.0, name='y')
+    z = goldstein(x, y)
+    z.name = 'z'
+    z.backward()
 
-    print(get_dot_graph(y))
+    print(get_dot_graph(z))
+    plot_dot_graph(z, verbose=False, to_file='goldstein.png')
