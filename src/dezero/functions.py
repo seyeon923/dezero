@@ -1,4 +1,5 @@
 from . import __is_simple_core
+from .core_simple import Variable
 
 if __is_simple_core:
     from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
@@ -16,6 +17,14 @@ Neg = Neg
 Pow = Pow
 
 
+add = add
+sub = sub
+mul = mul
+div = div
+neg = neg
+pow = pow
+
+
 class Square(Function):
     def forward(self, x):
         return x ** 2
@@ -24,6 +33,10 @@ class Square(Function):
         x = self.inputs[0].data
         gx = 2 * x * gy
         return gx
+
+
+def square(x):
+    return Square()(x)
 
 
 class Exp(Function):
@@ -36,17 +49,26 @@ class Exp(Function):
         return gx
 
 
-add = add
-sub = sub
-mul = mul
-div = div
-neg = neg
-pow = pow
-
-
-def square(x):
-    return Square()(x)
-
-
 def exp(x):
     return Exp()(x)
+
+
+class Sin(Function):
+    def forward(self, x):
+        return np.sin(x)
+
+    def backward(self, gy):
+        return gy * np.cos(self.inputs[0].data)
+
+
+def sin(x):
+    return Sin()(x)
+
+
+if __name__ == '__main__':
+    x = Variable(np.pi / 4)
+    y = sin(x)
+    y.backward()
+
+    print(y.data)
+    print(x.grad)
