@@ -1,7 +1,12 @@
 import unittest
+import numpy as np
+import sys
+import os
 
-from src.dezero.functions import *
-from src.dezero import *
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from dezero.functions import *  # nopep8
+from dezero import *  # nopep8
 
 
 def numerical_diff(f, x, eps=1e-4):
@@ -24,14 +29,14 @@ class SquareTest(unittest.TestCase):
         y = square(x)
         y.backward()
         expected = np.array(6.)
-        self.assertAlmostEqual(x.grad, expected)
+        self.assertAlmostEqual(x.grad.data, expected)
 
     def test_gradient_check(self):
         x = Variable(np.random.rand(1))
         y = square(x)
         y.backward()
         num_grad = numerical_diff(square, x)
-        self.assertTrue(np.allclose(x.grad, num_grad))
+        self.assertTrue(np.allclose(x.grad.data, num_grad))
 
 
 class ExpTest(unittest.TestCase):
@@ -46,14 +51,14 @@ class ExpTest(unittest.TestCase):
         y = exp(x)
         y.backward()
         expected = np.exp(np.array(3.))
-        self.assertAlmostEqual(x.grad, expected)
+        self.assertAlmostEqual(x.grad.data, expected)
 
     def test_gradient_check(self):
         x = Variable(np.random.rand(1))
         y = exp(x)
         y.backward()
         num_grad = numerical_diff(exp, x)
-        self.assertTrue(np.allclose(x.grad, num_grad))
+        self.assertTrue(np.allclose(x.grad.data, num_grad))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg', 'Pow', 'pow',
-           'Square', 'square', 'Exp', 'exp', 'Sin', 'sin']
+           'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos']
 from . import __is_simple_core
 from .core_simple import Variable
 
@@ -7,7 +7,8 @@ if __is_simple_core:
     from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
                               mul, div, pow, neg)
 else:
-    raise NotImplementedError('core module not implemented')
+    from .core import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
+                       mul, div, pow, neg)
 
 import numpy as np
 
@@ -32,7 +33,7 @@ class Square(Function):
         return x ** 2
 
     def backward(self, gy):
-        x = self.inputs[0].data
+        x = self.inputs[0]
         gx = 2 * x * gy
         return gx
 
@@ -46,8 +47,8 @@ class Exp(Function):
         return np.exp(x)
 
     def backward(self, gy):
-        x = self.inputs[0].data
-        gx = np.exp(x) * gy
+        x = self.inputs[0]
+        gx = exp(x) * gy
         return gx
 
 
@@ -60,11 +61,23 @@ class Sin(Function):
         return np.sin(x)
 
     def backward(self, gy):
-        return gy * np.cos(self.inputs[0].data)
+        return gy * cos(self.inputs[0])
 
 
 def sin(x):
     return Sin()(x)
+
+
+class Cos(Function):
+    def forward(self, x):
+        return np.cos(x)
+
+    def backward(self, gy):
+        return -gy * sin(self.inputs[0])
+
+
+def cos(x):
+    return Cos()(x)
 
 
 if __name__ == '__main__':

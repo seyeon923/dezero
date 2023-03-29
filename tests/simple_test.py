@@ -1,7 +1,12 @@
-from src.dezero import *
-from src.dezero.functions import *
 import numpy as np
 import gc
+import sys
+import os
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from dezero.functions import *  # nopep8
+from dezero import *  # nopep8
 
 x = Variable(np.array(1.))
 x = Variable(None)
@@ -77,35 +82,35 @@ assert A.inputs[0] == x
 
 y = square(exp(square(x)))
 y.backward()
-assert np.isclose(x.grad, 3.2974425)
+assert np.isclose(x.grad.data, 3.2974425)
 
 x = Variable(2.)
 y = Variable(3.)
 z = add(square(x), square(y))
 z.backward()
 assert np.isclose(z.data, 13., atol=1e-12)
-assert np.isclose(x.grad, 4., atol=1e-12)
-assert np.isclose(y.grad, 6., atol=1e-12)
+assert np.isclose(x.grad.data, 4., atol=1e-12)
+assert np.isclose(y.grad.data, 6., atol=1e-12)
 
 x = Variable(3.)
 y = add(x, x)
 y.backward(retain_grad=True)
-assert y.grad == 1.
-assert np.isclose(x.grad, 2., 1e-12)
+assert y.grad.data == 1.
+assert np.isclose(x.grad.data, 2., 1e-12)
 
 x.cleargrad()
 y = add(add(x, x), x)
 y.backward(retain_grad=True)
-assert y.grad == 1.
-assert np.isclose(x.grad, 3., atol=1e-12)
+assert y.grad.data == 1.
+assert np.isclose(x.grad.data, 3., atol=1e-12)
 
 x = Variable(2.)
 a = square(x)
 y = add(square(a), square(a))
 y.backward(retain_grad=True)
-assert y.grad == 1
+assert y.grad.data == 1
 assert np.isclose(y.data, 32., atol=1e-12)
-assert np.isclose(x.grad, 64., atol=1e-12)
+assert np.isclose(x.grad.data, 64., atol=1e-12)
 
 gc.collect()
 for i in range(10):
@@ -118,10 +123,10 @@ x1 = Variable(1.)
 t = add(x0, x1)
 y = add(x0, t)
 y.backward(retain_grad=True)
-assert y.grad == 1.
-assert np.isclose(t.grad, 1., atol=1e-12)
-assert np.isclose(x0.grad, 2., atol=1e-12)
-assert np.isclose(x1.grad, 1., atol=1e-12)
+assert y.grad.data == 1.
+assert np.isclose(t.grad.data, 1., atol=1e-12)
+assert np.isclose(x0.grad.data, 2., atol=1e-12)
+assert np.isclose(x1.grad.data, 1., atol=1e-12)
 
 x0 = Variable(1.)
 x1 = Variable(1.)
@@ -130,8 +135,8 @@ y = add(x0, t)
 y.backward(retain_grad=False)
 assert y.grad is None
 assert t.grad is None
-assert np.isclose(x0.grad, 2., atol=1e-12)
-assert np.isclose(x1.grad, 1., atol=1e-12)
+assert np.isclose(x0.grad.data, 2., atol=1e-12)
+assert np.isclose(x1.grad.data, 1., atol=1e-12)
 
 Config.enable_backprob = True
 x = Variable(np.ones((100, 100, 100)))
@@ -155,9 +160,9 @@ y = add(mul(a, b), c)
 y.backward()
 
 assert np.isclose(y.data, 7., atol=1e-12)
-assert np.isclose(a.grad, 2., atol=1e-12)
-assert np.isclose(b.grad, 3., atol=1e-12)
-assert np.isclose(c.grad, 1., atol=1e-12)
+assert np.isclose(a.grad.data, 2., atol=1e-12)
+assert np.isclose(b.grad.data, 3., atol=1e-12)
+assert np.isclose(c.grad.data, 1., atol=1e-12)
 
 a = Variable(3.)
 b = Variable(2.)
@@ -166,16 +171,16 @@ y = a*b + c
 y.backward()
 
 assert np.isclose(y.data, 7., atol=1e-12)
-assert np.isclose(a.grad, 2., atol=1e-12)
-assert np.isclose(b.grad, 3., atol=1e-12)
-assert np.isclose(c.grad, 1., atol=1e-12)
+assert np.isclose(a.grad.data, 2., atol=1e-12)
+assert np.isclose(b.grad.data, 3., atol=1e-12)
+assert np.isclose(c.grad.data, 1., atol=1e-12)
 
 a = Variable(1.)
 b = Variable(3.)
 y = a/b
 y.backward()
 
-assert np.isclose(b.grad, -1/9, atol=1e-12)
+assert np.isclose(b.grad.data, -1/9, atol=1e-12)
 
 a = Variable(2.)
 b = Variable(3.)
@@ -183,9 +188,9 @@ c = Variable(4.)
 y = a - b*c
 y.backward()
 
-assert a.grad == 1.
-assert np.isclose(b.grad, -4., atol=1e-12)
-assert np.isclose(c.grad, -3., atol=1e-12)
+assert a.grad.data == 1.
+assert np.isclose(b.grad.data, -4., atol=1e-12)
+assert np.isclose(c.grad.data, -3., atol=1e-12)
 
 x = Variable(2.)
 y = x + np.array(3.)
@@ -228,7 +233,7 @@ f = c + e
 g = square(f)
 assert np.isclose(g.data, 9., atol=1e-12)
 g.backward()
-assert np.isclose(a.grad, 72., atol=1e-12)
+assert np.isclose(a.grad.data, 72., atol=1e-12)
 
 x = Variable(2.)
 a = square(x)
@@ -239,4 +244,11 @@ e = square(a)
 y = add(e, d)
 y.backward()
 assert np.isclose(y.data, 48., atol=1e-12)
-assert np.isclose(x.grad, 96., atol=1e-12)
+assert np.isclose(x.grad.data, 96., atol=1e-12)
+
+x = Variable(3)
+y = x + x
+y.backward(retain_grad=True)
+
+assert np.isclose(y.grad.data, 1, atol=1e-12)
+assert np.isclose(x.grad.data, 2, atol=1e-12)
