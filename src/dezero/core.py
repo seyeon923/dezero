@@ -183,6 +183,13 @@ class Variable:
 
         return dezero.functions.reshape(self, shape)
 
+    def transpose(self, axes=None):
+        return dezero.functions.transpose(self, axes=axes)
+
+    @property
+    def T(self):
+        return dezero.functions.transpose(self)
+
     def cleargrad(self):
         self.grad = None
 
