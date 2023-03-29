@@ -302,6 +302,13 @@ assert np.isclose(x.grad.data, 100, atol=1e-12)
 
 x = Variable([[1, 2, 3], [4, 5, 6]])
 y = functions.reshape(x, (6,))
-y.backward()
+y.backward(retain_grad=True)
 
+assert y.data.shape == y.grad.shape
 assert x.data.shape == x.grad.shape
+
+x = Variable(np.random.randn(1, 2, 3))
+y1 = x.reshape((2, 3))
+y2 = x.reshape(2, 3)
+
+assert y1.shape == y2.shape

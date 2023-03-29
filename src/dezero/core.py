@@ -5,6 +5,8 @@ import weakref
 import contextlib
 import heapq
 
+import dezero
+
 
 @contextlib.contextmanager
 def using_config(name: str, value):
@@ -174,6 +176,12 @@ class Variable:
         if name is not None and not isinstance(name, str):
             raise TypeError('Variable.name must be str')
         self.name = name
+
+    def reshape(self, *shape):
+        if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+            shape = shape[0]
+
+        return dezero.functions.reshape(self, shape)
 
     def cleargrad(self):
         self.grad = None
