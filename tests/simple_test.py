@@ -5,8 +5,8 @@ import os
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
-from dezero.functions import *  # nopep8
 from dezero import *  # nopep8
+import dezero.functions as functions  # nopep8
 
 x = Variable(np.array(1.))
 x = Variable(None)
@@ -57,18 +57,18 @@ x = Variable(3.)
 print(x)
 print(repr(x))
 
-assert np.isclose(add(Variable(2.), Variable(3.)).data, 5.)
+assert np.isclose(functions.add(Variable(2.), Variable(3.)).data, 5.)
 
-assert square(Variable(np.array(10))).data == 100
-assert np.isclose(exp(Variable(np.array(1))).data, np.exp(1))
+assert functions.square(Variable(np.array(10))).data == 100
+assert np.isclose(functions.exp(Variable(np.array(1))).data, np.exp(1))
 
 x = Variable(np.array(0.5))
-y = square(exp(square(x)))
+y = functions.square(functions.exp(functions.square(x)))
 assert np.isclose(y.data, np.exp(0.25) * np.exp(0.25))
 
-A = Square()
-B = Exp()
-C = Square()
+A = functions.Square()
+B = functions.Exp()
+C = functions.Square()
 a = A(x)
 b = B(a)
 y = C(b)
@@ -80,33 +80,33 @@ assert B.inputs[0] == a
 assert a.creator == A
 assert A.inputs[0] == x
 
-y = square(exp(square(x)))
+y = functions.square(functions.exp(functions.square(x)))
 y.backward()
 assert np.isclose(x.grad.data, 3.2974425)
 
 x = Variable(2.)
 y = Variable(3.)
-z = add(square(x), square(y))
+z = functions.add(functions.square(x), functions.square(y))
 z.backward()
 assert np.isclose(z.data, 13., atol=1e-12)
 assert np.isclose(x.grad.data, 4., atol=1e-12)
 assert np.isclose(y.grad.data, 6., atol=1e-12)
 
 x = Variable(3.)
-y = add(x, x)
+y = functions.add(x, x)
 y.backward(retain_grad=True)
 assert y.grad.data == 1.
 assert np.isclose(x.grad.data, 2., 1e-12)
 
 x.cleargrad()
-y = add(add(x, x), x)
+y = functions.add(functions.add(x, x), x)
 y.backward(retain_grad=True)
 assert y.grad.data == 1.
 assert np.isclose(x.grad.data, 3., atol=1e-12)
 
 x = Variable(2.)
-a = square(x)
-y = add(square(a), square(a))
+a = functions.square(x)
+y = functions.add(functions.square(a), functions.square(a))
 y.backward(retain_grad=True)
 assert y.grad.data == 1
 assert np.isclose(y.data, 32., atol=1e-12)
@@ -116,12 +116,12 @@ gc.collect()
 for i in range(10):
     print(f'collected {gc.collect()} objects')
     x = Variable(np.random.randn(10000))
-    y = square(square(square(x)))
+    y = functions.square(functions.square(functions.square(x)))
 
 x0 = Variable(1.)
 x1 = Variable(1.)
-t = add(x0, x1)
-y = add(x0, t)
+t = functions.add(x0, x1)
+y = functions.add(x0, t)
 y.backward(retain_grad=True)
 assert y.grad.data == 1.
 assert np.isclose(t.grad.data, 1., atol=1e-12)
@@ -130,8 +130,8 @@ assert np.isclose(x1.grad.data, 1., atol=1e-12)
 
 x0 = Variable(1.)
 x1 = Variable(1.)
-t = add(x0, x1)
-y = add(x0, t)
+t = functions.add(x0, x1)
+y = functions.add(x0, t)
 y.backward(retain_grad=False)
 assert y.grad is None
 assert t.grad is None
@@ -140,13 +140,13 @@ assert np.isclose(x1.grad.data, 1., atol=1e-12)
 
 Config.enable_backprob = True
 x = Variable(np.ones((100, 100, 100)))
-y = square(square(square(x)))
+y = functions.square(functions.square(functions.square(x)))
 y.backward()
 
 Config.enable_backprob = False
 x = Variable(np.ones((100, 100, 100)))
-f = Square()
-y = square(f(square(x)))
+f = functions.Square()
+y = functions.square(f(functions.square(x)))
 assert y.creator is None
 assert f.inputs is None
 assert f.outputs is None
@@ -156,7 +156,7 @@ Config.enable_backprob = True
 a = Variable(3.)
 b = Variable(2.)
 c = Variable(1.)
-y = add(mul(a, b), c)
+y = functions.add(functions.mul(a, b), c)
 y.backward()
 
 assert np.isclose(y.data, 7., atol=1e-12)
@@ -225,23 +225,23 @@ y = x**3
 assert np.isclose(y.data, 8., atol=1e-12)
 
 a = Variable(1.)
-b = square(a)
-c = square(b)
-d = square(b)
+b = functions.square(a)
+c = functions.square(b)
+d = functions.square(b)
 e = c + d
 f = c + e
-g = square(f)
+g = functions.square(f)
 assert np.isclose(g.data, 9., atol=1e-12)
 g.backward()
 assert np.isclose(a.grad.data, 72., atol=1e-12)
 
 x = Variable(2.)
-a = square(x)
-b = square(a)
-c = square(a)
-d = add(b, c)
-e = square(a)
-y = add(e, d)
+a = functions.square(x)
+b = functions.square(a)
+c = functions.square(a)
+d = functions.add(b, c)
+e = functions.square(a)
+y = functions.add(e, d)
 y.backward()
 assert np.isclose(y.data, 48., atol=1e-12)
 assert np.isclose(x.grad.data, 96., atol=1e-12)
@@ -336,3 +336,19 @@ y.backward(retain_grad=True)
 assert y.shape == (5, 4, 3, 2)
 assert y.data.shape == y.grad.shape
 assert x.data.shape == x.grad.shape
+
+x0 = Variable([1, 2, 3])
+x1 = Variable(10)
+y = x0 + x1
+y.backward(retain_grad=True)
+
+print(x0.data)
+print(type(x1.data))
+
+assert np.all(y.data == np.array([11, 12, 13]))
+assert np.all(y.grad.data == np.array([1, 1, 1]))
+print(x0.grad)
+print(x0.grad.data)
+print(x0.grad.data == np.array([1, 1, 1], dtype=x0.data.dtype))
+assert np.all(x0.grad.data == np.array([1, 1, 1], dtype=x0.data.dtype))
+assert np.all(x1.grad.data == 3)

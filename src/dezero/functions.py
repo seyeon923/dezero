@@ -1,16 +1,18 @@
 __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg', 'Pow', 'pow',
            'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos']
+import numpy as np
+
 from . import __is_simple_core
-from .core_simple import Variable, as_variable
 
 if __is_simple_core:
-    from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
+    from .core_simple import (Variable, as_variable, Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
                               mul, div, pow, neg)
 else:
-    from .core import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
+    from .core import (Variable, as_variable, Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
                        mul, div, pow, neg)
 
-import numpy as np
+
+from . import utils
 
 Add = Add
 Sub = Sub
@@ -135,6 +137,44 @@ class Transpose(Function):
 
 def transpose(x: Variable, axes=None):
     return Transpose(axes=axes)(x)
+
+
+class SumTo(Function):
+    def __init__(self, shape):
+        self.__shape = shape
+        self.__x_shape = None
+
+    def forward(self, x):
+        self.__x_shape = x.shape
+        return utils.sum_to(x, self.__shape)
+
+    def backward(self, gy):
+        return broadcast_to(gy, self.__x_shape)
+
+
+def sum_to(x: Variable, shape):
+    if x.shape == tuple(shape):
+        return as_variable(x)
+    return SumTo(shape)(x)
+
+
+class BroadcastTo(Function):
+    def __init__(self, shape):
+        self.__shape = shape
+        self.__x_shape = None
+
+    def forward(self, x):
+        self.__x_shape = x.shape
+        return np.broadcast_to(x, self.__shape)
+
+    def backward(self, gy):
+        return sum_to(gy, self.__x_shape)
+
+
+def broadcast_to(x: Variable, shape):
+    if x.shape == tuple(shape):
+        return as_variable(x)
+    return BroadcastTo(shape)(x)
 
 
 if __name__ == '__main__':

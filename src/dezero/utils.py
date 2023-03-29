@@ -1,5 +1,3 @@
-from . import Variable, Function
-
 from string import Template
 from io import StringIO
 import tempfile
@@ -7,6 +5,10 @@ import os
 import traceback
 import sys
 import subprocess
+
+import numpy as np
+
+from . import Variable, Function
 
 __DOT_VAR_TEMPLATE = Template(
     '${id} [label="${label}", color=orange, style=filled]\n')
@@ -89,6 +91,25 @@ def plot_dot_graph(output: Variable, verbose=True, to_file='graph.png'):
         traceback.print_exc()
     finally:
         os.unlink(f.name)
+
+
+def sum_to(x: np.ndarray, shape) -> np.ndarray:
+    """Sum elements along axes to output an array of a given shape.
+    Args:
+        `x` (ndarray): Input array.
+        `shape`: desired shape of an output array
+    Returns:
+        ndarray: Output array of the shape.
+    """
+    ndim = len(shape)
+    lead = x.ndim - ndim
+    lead_axis = tuple(range(lead))
+
+    axis = tuple([i + lead for i, sx in enumerate(shape) if sx == 1])
+    y = x.sum(lead_axis + axis, keepdims=True)
+    if lead > 0:
+        y = y.squeeze(lead_axis)
+    return y
 
 
 if __name__ == '__main__':

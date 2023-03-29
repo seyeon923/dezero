@@ -88,36 +88,66 @@ class Function:
 
 class Add(Function):
     def forward(self, x0, x1):
-        return (x0 + x1,)
+        self.__x0_shape = x0.shape
+        self.__x1_shape = x1.shape
+        return x0 + x1
 
     def backward(self, gy):
-        return gy, gy
+        gx0, gx1 = gy, gy
+        if self.__x0_shape != self.__x1_shape:
+            gx0 = dezero.functions.sum_to(gx0, self.__x0_shape)
+            gx1 = dezero.functions.sum_to(gx1, self.__x1_shape)
+        return gx0, gx1
 
 
 class Sub(Function):
     def forward(self, x0, x1):
+        self.__x0_shape = x0.shape
+        self.__x1_shape = x1.shape
         return x0 - x1
 
     def backward(self, gy):
-        return gy, -gy
+        gx0, gx1 = gy, -gy
+        if self.__x0_shape != self.__x1_shape:
+            gx0 = dezero.functions.sum_to(gx0, self.__x0_shape)
+            gx1 = dezero.functions.sum_to(gx1, self.__x1_shape)
+        return gx0, gx1
 
 
 class Mul(Function):
     def forward(self, x0, x1):
+        self.__x0_shape = x0.shape
+        self.__x1_shape = x1.shape
         return x0 * x1
 
     def backward(self, gy):
         x0, x1 = self.inputs
-        return gy * x1, gy * x0
+        gx0 = gy * x1
+        gx1 = gy * x0
+
+        if self.__x0_shape != self.__x1_shape:
+            gx0 = dezero.functions.sum_to(gx0, self.__x0_shape)
+            gx1 = dezero.functions.sum_to(gx1, self.__x1_shape)
+
+        return gx0, gx1
 
 
 class Div(Function):
     def forward(self, x0, x1):
+        self.__x0_shape = x0.shape
+        self.__x1_shape = x1.shape
         return x0 / x1
 
     def backward(self, gy):
         x0, x1 = self.inputs
-        return gy / x1, -gy * x0 / (x1 * x1)
+        gx0 = gy / x1
+        gx1 = -gy * x0 / (x1 * x1)
+
+        if self.__x0_shape != self.__x1_shape:
+            gx0 = dezero.functions.sum_to(gx0, self.__x0_shape)
+            gx1 = dezero.functions.sum_to(gx1, self.__x1_shape)
+
+        return gx0, gx1
 
 
 class Neg(Function):
