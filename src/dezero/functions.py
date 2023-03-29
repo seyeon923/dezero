@@ -80,6 +80,19 @@ def cos(x):
     return Cos()(x)
 
 
+class Tanh(Function):
+    def forward(self, x):
+        return np.tanh(x)
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        return gy * (1 - y * y)
+
+
+def tanh(x: Variable):
+    return Tanh()(x)
+
+
 if __name__ == '__main__':
     x = Variable(np.pi / 4)
     y = sin(x)

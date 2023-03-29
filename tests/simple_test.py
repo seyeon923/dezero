@@ -270,3 +270,22 @@ gx2 = x.grad
 
 assert np.isclose(gx.data, 24, atol=1e-12)
 assert np.isclose(gx2.data, 44, atol=1e-12)
+
+x = Variable(2.)
+iters = 10
+
+for i in range(iters):
+    print(i, x)
+
+    y: Variable = f(x)
+    x.cleargrad()
+    y.backward(create_graph=True)
+
+    gx = x.grad
+    x.cleargrad()
+    gx.backward()
+    gx2 = x.grad
+
+    x.data -= gx.data / gx2.data
+
+assert np.isclose(x.data, 1, atol=1e-12)
