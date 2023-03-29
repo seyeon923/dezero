@@ -95,20 +95,46 @@ def tanh(x: Variable):
 
 class Reshape(Function):
     def __init__(self, shape):
-        self.shape = shape
+        self.__shape = shape
 
     def forward(self, x: np.ndarray):
-        self.x_shape = x.shape
-        return x.reshape(self.shape)
+        self.__x_shape = x.shape
+        return x.reshape(self.__shape)
 
     def backward(self, gy):
-        return reshape(gy, self.x_shape)
+        return reshape(gy, self.__x_shape)
 
 
 def reshape(x: Variable | np.ndarray, shape):
     if x.shape == shape:
         return as_variable(x)
     return Reshape(shape)(x)
+
+
+class Transpose(Function):
+    def __init__(self, axes=None):
+        self.__axes = axes
+        self.__inv_axes = self.__get_inv_axes()
+
+    def forward(self, x):
+        return np.transpose(x, self.__axes)
+
+    def backward(self, gy):
+        return transpose(gy, self.__inv_axes)
+
+    def __get_inv_axes(self):
+        if self.__axes == None:
+            return None
+        inv_axes = []
+
+        for i in range(len(self.__axes)):
+            inv_axes.append(self.__axes.index(i))
+
+        return inv_axes
+
+
+def transpose(x: Variable, axes=None):
+    return Transpose(axes=axes)(x)
 
 
 if __name__ == '__main__':

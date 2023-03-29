@@ -312,3 +312,27 @@ y1 = x.reshape((2, 3))
 y2 = x.reshape(2, 3)
 
 assert y1.shape == y2.shape
+
+x = Variable([[1, 2, 3], [4, 5, 6]])
+y = functions.transpose(x)
+y.backward(retain_grad=True)
+
+assert np.all(y.data == np.array([[1, 4], [2, 5], [3, 6]]))
+assert np.all(y.grad.data == np.array([[1, 1], [1, 1], [1, 1]]))
+assert np.all(x.grad.data == np.array([[1, 1, 1], [1, 1, 1]]))
+
+x = Variable(np.ones((1, 2, 3)))
+y = functions.transpose(x, (1, 0, 2))
+y.backward(retain_grad=True)
+
+assert y.shape == (2, 1, 3)
+assert y.data.shape == y.grad.shape
+assert x.data.shape == x.grad.shape
+
+x = Variable(np.ones((2, 3, 4, 5)))
+y = functions.transpose(x)
+y.backward(retain_grad=True)
+
+assert y.shape == (5, 4, 3, 2)
+assert y.data.shape == y.grad.shape
+assert x.data.shape == x.grad.shape
