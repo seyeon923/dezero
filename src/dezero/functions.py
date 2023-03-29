@@ -1,7 +1,7 @@
 __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg', 'Pow', 'pow',
            'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos']
 from . import __is_simple_core
-from .core_simple import Variable
+from .core_simple import Variable, as_variable
 
 if __is_simple_core:
     from .core_simple import (Function, Add, Mul, Sub, Div, Neg, Pow, add, sub,
@@ -91,6 +91,24 @@ class Tanh(Function):
 
 def tanh(x: Variable):
     return Tanh()(x)
+
+
+class Reshape(Function):
+    def __init__(self, shape):
+        self.shape = shape
+
+    def forward(self, x: np.ndarray):
+        self.x_shape = x.shape
+        return x.reshape(self.shape)
+
+    def backward(self, gy):
+        return reshape(gy, self.x_shape)
+
+
+def reshape(x: Variable | np.ndarray, shape):
+    if x.shape == shape:
+        return as_variable(x)
+    return Reshape(shape)(x)
 
 
 if __name__ == '__main__':

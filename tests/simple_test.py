@@ -289,3 +289,19 @@ for i in range(iters):
     x.data -= gx.data / gx2.data
 
 assert np.isclose(x.data, 1, atol=1e-12)
+
+x = Variable(2)
+y = x**2
+y.backward(create_graph=True)
+gx = x.grad
+x.cleargrad()
+
+z = gx ** 3 + y
+z.backward()
+assert np.isclose(x.grad.data, 100, atol=1e-12)
+
+x = Variable([[1, 2, 3], [4, 5, 6]])
+y = functions.reshape(x, (6,))
+y.backward()
+
+assert x.data.shape == x.grad.shape
