@@ -252,3 +252,21 @@ y.backward(retain_grad=True)
 
 assert np.isclose(y.grad.data, 1, atol=1e-12)
 assert np.isclose(x.grad.data, 2, atol=1e-12)
+
+
+def f(x):
+    y = x**4 - 2 * x ** 2
+    return y
+
+
+x = Variable(2)
+y = f(x)
+y.backward(create_graph=True)
+
+gx = x.grad
+x.cleargrad()
+gx.backward()
+gx2 = x.grad
+
+assert np.isclose(gx.data, 24, atol=1e-12)
+assert np.isclose(gx2.data, 44, atol=1e-12)

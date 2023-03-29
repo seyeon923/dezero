@@ -175,9 +175,6 @@ class Variable:
             raise TypeError('Variable.name must be str')
         self.name = name
 
-    def copy(self, name=None):
-        return Variable(self.data, name=name)
-
     def cleargrad(self):
         self.grad = None
 
@@ -209,7 +206,7 @@ class Variable:
 
                 for x, gx in zip(func.inputs, gxs):
                     if x.grad is None:
-                        x.grad = gx.copy()
+                        x.grad = gx
                     else:
                         x.grad += gx
 
