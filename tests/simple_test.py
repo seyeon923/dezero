@@ -370,7 +370,7 @@ b = Variable(np.zeros(1))
 
 
 def predict(x):
-    return functions.matmul(x, w) + b
+    return functions.matmul_add(x, w, b)
 
 
 lr = 0.1

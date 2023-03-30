@@ -193,6 +193,25 @@ def matmul(x0, x1):
     return MatMul()(x0, x1)
 
 
+class MatMulAdd(Function):
+    def forward(self, x, w, b):
+        return np.matmul(x, w) + b
+
+    def backward(self, gy):
+        x, w, b = self.inputs
+
+        gx = matmul(gy, w.T)
+        gw = matmul(x.T, gy)
+        gb = sum_to(gy, b.shape)
+        return gx, gw, gb
+
+
+def matmul_add(x: Variable, w: Variable, b: Variable = None):
+    if b is None:
+        return matmul(x, y)
+    return MatMulAdd()(x, w, b)
+
+
 class Sum(Function):
     def __init__(self, axis=None, keepdims=False):
         self.__axis = axis
