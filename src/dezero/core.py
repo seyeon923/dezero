@@ -87,6 +87,9 @@ class Function:
 
 
 class Add(Function):
+    def __init__(self):
+        super().__init__(name='Add')
+
     def forward(self, x0, x1):
         self.__x0_shape = x0.shape
         self.__x1_shape = x1.shape
@@ -101,6 +104,9 @@ class Add(Function):
 
 
 class Sub(Function):
+    def __init__(self):
+        super().__init__(name='Sub')
+
     def forward(self, x0, x1):
         self.__x0_shape = x0.shape
         self.__x1_shape = x1.shape
@@ -115,6 +121,9 @@ class Sub(Function):
 
 
 class Mul(Function):
+    def __init__(self):
+        super().__init__(name='Mul')
+
     def forward(self, x0, x1):
         self.__x0_shape = x0.shape
         self.__x1_shape = x1.shape
@@ -133,6 +142,9 @@ class Mul(Function):
 
 
 class Div(Function):
+    def __init__(self):
+        super().__init__(name='Div')
+
     def forward(self, x0, x1):
         self.__x0_shape = x0.shape
         self.__x1_shape = x1.shape
@@ -151,6 +163,9 @@ class Div(Function):
 
 
 class Neg(Function):
+    def __init__(self):
+        super().__init__(name='Neg')
+
     def forward(self, x):
         return -x
 
@@ -160,6 +175,7 @@ class Neg(Function):
 
 class Pow(Function):
     def __init__(self, c):
+        super().__init__(name=f'Pow(c)')
         self.__c = c
 
     def forward(self, x):

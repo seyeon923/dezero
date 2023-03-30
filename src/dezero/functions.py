@@ -31,6 +31,9 @@ pow = pow
 
 
 class Square(Function):
+    def __init__(self):
+        super().__init__(name='Square')
+
     def forward(self, x):
         return x ** 2
 
@@ -45,6 +48,9 @@ def square(x):
 
 
 class Exp(Function):
+    def __init__(self):
+        super().__init__(name='Exp')
+
     def forward(self, x):
         return np.exp(x)
 
@@ -59,6 +65,9 @@ def exp(x):
 
 
 class Sin(Function):
+    def __init__(self):
+        super().__init__(name='Sin')
+
     def forward(self, x):
         return np.sin(x)
 
@@ -71,6 +80,9 @@ def sin(x):
 
 
 class Cos(Function):
+    def __init__(self):
+        super().__init__(name='Cos')
+
     def forward(self, x):
         return np.cos(x)
 
@@ -83,6 +95,9 @@ def cos(x):
 
 
 class Tanh(Function):
+    def __init__(self):
+        super().__init__(name='Tanh')
+
     def forward(self, x):
         return np.tanh(x)
 
@@ -97,6 +112,7 @@ def tanh(x):
 
 class Reshape(Function):
     def __init__(self, shape):
+        super().__init__(name=f'Reshape({shape})')
         self.__shape = shape
 
     def forward(self, x: np.ndarray):
@@ -115,6 +131,9 @@ def reshape(x: Variable | np.ndarray, shape):
 
 class Transpose(Function):
     def __init__(self, axes=None):
+        name = 'Transpose' if axes is None else f'Transpose({axes})'
+        super().__init__(name=name)
+
         self.__axes = axes
         self.__inv_axes = self.__get_inv_axes()
 
@@ -141,6 +160,7 @@ def transpose(x, axes=None):
 
 class SumTo(Function):
     def __init__(self, shape):
+        super().__init__(name=f'SumTo({shape})')
         self.__shape = shape
         self.__x_shape = None
 
@@ -160,6 +180,7 @@ def sum_to(x, shape):
 
 class BroadcastTo(Function):
     def __init__(self, shape):
+        super().__init__(f'BroadcastTo({shape})')
         self.__shape = shape
         self.__x_shape = None
 
@@ -178,6 +199,9 @@ def broadcast_to(x, shape):
 
 
 class MatMul(Function):
+    def __init__(self):
+        super().__init__('MatMul')
+
     def forward(self, x0, x1):
         return np.matmul(x0, x1)
 
@@ -194,6 +218,9 @@ def matmul(x0, x1):
 
 
 class MatMulAdd(Function):
+    def __init__(self):
+        super().__init__(name='MatMulAdd')
+
     def forward(self, x, w, b):
         return np.matmul(x, w) + b
 
@@ -214,6 +241,7 @@ def matmul_add(x, w, b=None):
 
 class Sum(Function):
     def __init__(self, axis=None, keepdims=False):
+        super().__init__(name=f'Sum(axis={axis}, keepdims={keepdims})')
         self.__axis = axis
         self.__keepdims = keepdims
         self.__x_shape = None
@@ -231,6 +259,9 @@ def sum(x: Variable, axis=None, keepdims=False):
 
 
 class MSE(Function):
+    def __init__(self):
+        super().__init__(name='MSE')
+
     def forward(self, x0, x1):
         diff = x0 - x1
 
@@ -252,6 +283,9 @@ def mse(x0: Variable, x1: Variable):
 
 
 class Sigmoid(Function):
+    def __init__(self):
+        super().__init__(name='Sigmoid')
+
     def forward(self, x):
         return 1 / (1 + np.exp(-x))
 

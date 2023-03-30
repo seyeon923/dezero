@@ -30,7 +30,7 @@ def _dot_func(f: Function):
     sio = StringIO()
 
     sio.write(__DOT_FUNC_TEMPLATE.substitute(
-        id=id(f), label=f.__class__.__name__))
+        id=id(f), label=f.name))
 
     for x in f.inputs:
         sio.write(__DOT_EDGE_TEMPLATE.substitute(e1=id(x), e2=id(f)))
