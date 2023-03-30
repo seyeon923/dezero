@@ -177,6 +177,22 @@ def broadcast_to(x: Variable, shape):
     return BroadcastTo(shape)(x)
 
 
+class MatMul(Function):
+    def forward(self, x0, x1):
+        return np.matmul(x0, x1)
+
+    def backward(self, gy):
+        x0, x1 = self.inputs
+        gx0 = matmul(gy, x1.T)
+        gx1 = matmul(x0.T, gy)
+
+        return gx0, gx1
+
+
+def matmul(x0, x1):
+    return MatMul()(x0, x1)
+
+
 if __name__ == '__main__':
     x = Variable(np.pi / 4)
     y = sin(x)

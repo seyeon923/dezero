@@ -347,8 +347,13 @@ print(type(x1.data))
 
 assert np.all(y.data == np.array([11, 12, 13]))
 assert np.all(y.grad.data == np.array([1, 1, 1]))
-print(x0.grad)
-print(x0.grad.data)
-print(x0.grad.data == np.array([1, 1, 1], dtype=x0.data.dtype))
 assert np.all(x0.grad.data == np.array([1, 1, 1], dtype=x0.data.dtype))
 assert np.all(x1.grad.data == 3)
+
+x = Variable(np.random.randn(2, 3))
+w = Variable(np.random.randn(3, 4))
+y = functions.matmul(x, w)
+y.backward()
+
+assert x.grad.shape == x.data.shape
+assert w.grad.shape == w.data.shape
