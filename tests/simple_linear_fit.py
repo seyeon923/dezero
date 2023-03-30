@@ -6,10 +6,10 @@ from import_dezero import *
 np.random.seed(0)
 x = np.linspace(0, 1, 100).reshape((100, 1))
 y = 2*x + 5 + np.random.randn(100, 1)
-x, y = Variable(x), Variable(y)
+x, y = dz.Variable(x), dz.Variable(y)
 
-w = Variable(np.zeros((1, 1)))
-b = Variable(np.zeros(1))
+w = dz.Variable(np.zeros((1, 1)))
+b = dz.Variable(np.zeros(1))
 
 
 def predict(x):

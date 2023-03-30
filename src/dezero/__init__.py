@@ -1,4 +1,4 @@
-__all__ = ['Variable', 'Function', 'using_config',
+__all__ = ['Variable', 'Function', 'Parameter', 'using_config',
            'enable_backprob', 'disable_backprob', 'as_variable', 'Config']
 
 __is_simple_core = False
@@ -19,3 +19,4 @@ else:
     from .core import enable_backprob
     from .core import disable_backprob
     from .core import as_variable
+    from .core import Parameter

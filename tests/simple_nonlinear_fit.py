@@ -5,19 +5,17 @@ from import_dezero import *
 
 x = np.linspace(0, 1, 100).reshape((100, 1))
 y = np.sin(2*np.pi * x) + np.random.rand(100, 1)
-x, y = Variable(x), Variable(y)
+x, y = dz.Variable(x), dz.Variable(y)
 
 i, h, o = 1, 10, 1
-w1 = Variable(0.01 * np.random.randn(i, h))
-b1 = Variable(np.zeros(h))
-w2 = Variable(0.01 * np.random.randn(h, o))
-b2 = Variable(np.zeros(o))
+l1 = layers.Linear(h)
+l2 = layers.Linear(o)
 
 
 def predict(x):
-    y = functions.matmul_add(x, w1, b1)
+    y = l1(x)
     y = functions.sigmoid(y)
-    return functions.matmul_add(y, w2, b2)
+    return l2(y)
 
 
 lr = 0.2
@@ -25,18 +23,15 @@ iters = 10000
 
 for i in range(iters):
     y_pred = predict(x)
-    loss = functions.mse(y, y_pred)
+    loss: dz.Variable = functions.mse(y, y_pred)
 
-    w1.cleargrad()
-    b1.cleargrad()
-    w2.cleargrad()
-    b2.cleargrad()
+    l1.cleargrads()
+    l2.cleargrads()
     loss.backward()
 
-    w1.data -= lr * w1.grad.data
-    b1.data -= lr * b1.grad.data
-    w2.data -= lr * w2.grad.data
-    b2.data -= lr * b2.grad.data
+    for l in [l1, l2]:
+        for p in l.params():
+            p.data -= lr * p.grad.data
 
     if i % 1000 == 0:
         print(f'loss={loss.data}')

@@ -385,3 +385,7 @@ Variable.__truediv__ = div
 Variable.__rtruediv__ = lambda self, other: div(other, self)
 Variable.__neg__ = neg
 Variable.__pow__ = pow
+
+
+class Parameter(Variable):
+    pass
