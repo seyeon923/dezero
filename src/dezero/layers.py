@@ -1,5 +1,5 @@
-from typing import Generator
 import weakref
+from typing import Generator
 
 import numpy as np
 
@@ -9,10 +9,10 @@ from . import functions
 
 class Layer:
     def __init__(self):
-        self._params: set[Parameter] = set()
+        self._params: set[str] = set()
 
     def __setattr__(self, name: str, value) -> None:
-        if isinstance(value, Parameter):
+        if isinstance(value, (Parameter, Layer)):
             self._params.add(name)
         super().__setattr__(name, value)
 
@@ -30,7 +30,12 @@ class Layer:
 
     def params(self) -> Generator[Parameter, None, None]:
         for name in self._params:
-            yield getattr(self, name)
+            obj = getattr(self, name)
+
+            if isinstance(obj, Layer):
+                yield from obj.params()
+            else:
+                yield obj
 
     def cleargrads(self):
         for param in self.params():
