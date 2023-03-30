@@ -21,11 +21,13 @@ class TwoLayerModel(dz.Model):
         return self.l2(y)
 
 
-model = TwoLayerModel(10, 1)
+model = models.MLP((10, 1))
 model.plot(x)
 
 lr = 0.2
 iters = 10000
+
+optimizer = optimizers.SGD(lr).setup(model)
 
 for i in range(iters):
     y_pred = model(x)
@@ -34,8 +36,7 @@ for i in range(iters):
     model.cleargrads()
     loss.backward()
 
-    for p in model.params():
-        p.data -= lr * p.grad.data
+    optimizer.update()
 
     if i % 1000 == 0:
         print(f'loss={loss.data}')
