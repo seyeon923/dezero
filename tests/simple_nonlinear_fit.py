@@ -8,26 +8,13 @@ y = np.sin(2*np.pi * x) + np.random.rand(100, 1)
 x, y = dz.Variable(x), dz.Variable(y)
 
 
-class TwoLayerModel(dz.Model):
-    def __init__(self, hidden_size, out_size):
-        super().__init__()
-
-        self.l1 = layers.Linear(hidden_size)
-        self.l2 = layers.Linear(out_size)
-
-    def forward(self, x):
-        y = self.l1(x)
-        y = functions.sigmoid(y)
-        return self.l2(y)
-
-
 model = models.MLP((10, 1))
 model.plot(x)
 
 lr = 0.2
 iters = 10000
 
-optimizer = optimizers.SGD(lr).setup(model)
+optimizer = optimizers.MomentumSGD(lr).setup(model)
 
 for i in range(iters):
     y_pred = model(x)
