@@ -3,12 +3,8 @@ import sys
 import os
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-from dezero import *  # nopep8
-import dezero.functions as functions  # nopep8
+from import_dezero import *
 
 x = Variable(np.array(1.))
 x = Variable(None)
@@ -344,8 +340,6 @@ x1 = Variable(10)
 y = x0 + x1
 y.backward(retain_grad=True)
 
-print(x0.data)
-print(type(x1.data))
 
 assert np.all(y.data == np.array([11, 12, 13]))
 assert np.all(y.grad.data == np.array([1, 1, 1]))
@@ -359,37 +353,3 @@ y.backward()
 
 assert x.grad.shape == x.data.shape
 assert w.grad.shape == w.data.shape
-
-np.random.seed(0)
-x = np.random.randn(100, 1)
-y = 2*x + 5 + np.random.randn(100, 1)
-x, y = Variable(x), Variable(y)
-
-w = Variable(np.zeros((1, 1)))
-b = Variable(np.zeros(1))
-
-
-def predict(x):
-    return functions.matmul_add(x, w, b)
-
-
-lr = 0.1
-iters = 100
-
-for i in range(iters):
-    y_pred = predict(x)
-    loss = functions.mse(y, y_pred)
-
-    w.cleargrad()
-    b.cleargrad()
-    loss.backward()
-
-    w.data -= lr * w.grad.data
-    b.data -= lr * b.grad.data
-
-    print(f'w={w.data}, b={b.data}, loss={loss.data}')
-
-y_pred = predict(x)
-plt.scatter(x.data, y.data)
-plt.plot(x.data, y_pred.data, 'r')
-plt.show()
