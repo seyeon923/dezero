@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from import_dezero import *
 
 np.random.seed(0)
-x = np.random.randn(100, 1)
+x = np.linspace(0, 1, 100).reshape((100, 1))
 y = 2*x + 5 + np.random.randn(100, 1)
 x, y = Variable(x), Variable(y)
 

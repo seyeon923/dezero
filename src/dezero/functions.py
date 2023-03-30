@@ -91,7 +91,7 @@ class Tanh(Function):
         return gy * (1 - y * y)
 
 
-def tanh(x: Variable):
+def tanh(x):
     return Tanh()(x)
 
 
@@ -135,7 +135,7 @@ class Transpose(Function):
         return inv_axes
 
 
-def transpose(x: Variable, axes=None):
+def transpose(x, axes=None):
     return Transpose(axes=axes)(x)
 
 
@@ -152,7 +152,7 @@ class SumTo(Function):
         return broadcast_to(gy, self.__x_shape)
 
 
-def sum_to(x: Variable, shape):
+def sum_to(x, shape):
     if x.shape == tuple(shape):
         return as_variable(x)
     return SumTo(shape)(x)
@@ -171,7 +171,7 @@ class BroadcastTo(Function):
         return sum_to(gy, self.__x_shape)
 
 
-def broadcast_to(x: Variable, shape):
+def broadcast_to(x, shape):
     if x.shape == tuple(shape):
         return as_variable(x)
     return BroadcastTo(shape)(x)
@@ -206,7 +206,7 @@ class MatMulAdd(Function):
         return gx, gw, gb
 
 
-def matmul_add(x: Variable, w: Variable, b: Variable = None):
+def matmul_add(x, w, b=None):
     if b is None:
         return matmul(x, y)
     return MatMulAdd()(x, w, b)
@@ -249,6 +249,19 @@ class MSE(Function):
 
 def mse(x0: Variable, x1: Variable):
     return MSE()(x0, x1)
+
+
+class Sigmoid(Function):
+    def forward(self, x):
+        return 1 / (1 + np.exp(-x))
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+        return y*(1-y) * gy
+
+
+def sigmoid(x: Variable):
+    return Sigmoid()(x)
 
 
 if __name__ == '__main__':
