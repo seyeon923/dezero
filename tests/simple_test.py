@@ -373,17 +373,12 @@ def predict(x):
     return functions.matmul(x, w) + b
 
 
-def mse(x0, x1):
-    diff = x0 - x1
-    return functions.sum(diff ** 2) / len(diff)
-
-
 lr = 0.1
 iters = 100
 
 for i in range(iters):
     y_pred = predict(x)
-    loss = mse(y, y_pred)
+    loss = functions.mse(y, y_pred)
 
     w.cleargrad()
     b.cleargrad()

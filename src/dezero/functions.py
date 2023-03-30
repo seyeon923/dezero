@@ -211,6 +211,27 @@ def sum(x: Variable, axis=None, keepdims=False):
     return Sum(axis=axis, keepdims=keepdims)(x)
 
 
+class MSE(Function):
+    def forward(self, x0, x1):
+        diff = x0 - x1
+
+        return np.sum(diff*diff) / len(diff)
+
+    def backward(self, gy):
+        x0, x1 = self.inputs
+
+        diff = x0 - x1
+
+        gx0 = diff*2/len(diff) * gy
+        gx1 = -gx0
+
+        return gx0, gx1
+
+
+def mse(x0: Variable, x1: Variable):
+    return MSE()(x0, x1)
+
+
 if __name__ == '__main__':
     x = Variable(np.pi / 4)
     y = sin(x)
