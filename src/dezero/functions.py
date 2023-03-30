@@ -193,6 +193,24 @@ def matmul(x0, x1):
     return MatMul()(x0, x1)
 
 
+class Sum(Function):
+    def __init__(self, axis=None, keepdims=False):
+        self.__axis = axis
+        self.__keepdims = keepdims
+        self.__x_shape = None
+
+    def forward(self, x):
+        self.__x_shape = x.shape
+        return np.sum(x, axis=self.__axis, keepdims=self.__keepdims)
+
+    def backward(self, gy):
+        return broadcast_to(gy, self.__x_shape)
+
+
+def sum(x: Variable, axis=None, keepdims=False):
+    return Sum(axis=axis, keepdims=keepdims)(x)
+
+
 if __name__ == '__main__':
     x = Variable(np.pi / 4)
     y = sin(x)
