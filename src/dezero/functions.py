@@ -1,5 +1,7 @@
 __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg', 'Pow', 'pow',
-           'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos']
+           'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos', 'Tanh', 'tanh',
+           'Reshape', 'reshape', 'Transpose', 'transpose', 'SumTo', 'sum_to', 'BroadcastTo', 'broadcast_to',
+           'Matmul', 'matmul', 'MatmulAdd', 'matmul_add', 'Sum', 'sum', 'MSE', 'mse', 'Sigmoid', 'sigmoid']
 import numpy as np
 
 from . import __is_simple_core
@@ -198,7 +200,7 @@ def broadcast_to(x, shape):
     return BroadcastTo(shape)(x)
 
 
-class MatMul(Function):
+class Matmul(Function):
     def __init__(self):
         super().__init__('MatMul')
 
@@ -214,10 +216,10 @@ class MatMul(Function):
 
 
 def matmul(x0, x1):
-    return MatMul()(x0, x1)
+    return Matmul()(x0, x1)
 
 
-class MatMulAdd(Function):
+class MatmulAdd(Function):
     def __init__(self):
         super().__init__(name='MatMulAdd')
 
@@ -236,7 +238,7 @@ class MatMulAdd(Function):
 def matmul_add(x, w, b=None):
     if b is None:
         return matmul(x, y)
-    return MatMulAdd()(x, w, b)
+    return MatmulAdd()(x, w, b)
 
 
 class Sum(Function):
