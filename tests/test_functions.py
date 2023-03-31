@@ -43,7 +43,6 @@ def numerical_diff(f: Function, *inputs: Variable | np.ndarray, eps=1e-6):
 
 
 class FunctionTest(unittest.TestCase):
-    NUM_TESTS = 100
     MAX_DIM_SIZE = 10
     MAX_NDIM = 5
 
@@ -120,17 +119,18 @@ class UnaryFuncTest(FunctionTest):
         self._exact_forward_f = None
         self._exact_backward_f = None
         self._test_dims = []
+        self.num_tests = 100
 
     def _test_forward_nd(self, ndim):
         with self.subTest(f'{ndim}d input test'):
-            for _ in range(self.NUM_TESTS):
+            for _ in range(self.num_tests):
                 x = self.get_rand_test_input(ndim=ndim)
                 self.assertForwardWithInput(
                     self._target_f, self._exact_forward_f, x)
 
     def _test_backward_nd(self, ndim):
         with self.subTest(f'{ndim}d input test'):
-            for _ in range(self.NUM_TESTS):
+            for _ in range(self.num_tests):
                 x = self.get_rand_test_input(ndim=ndim)
                 self.assertBackwardWithInput(
                     self._target_f, x, exact_f=self._exact_backward_f)
@@ -233,6 +233,43 @@ class NegTest(UnaryFuncTest):
         self._exact_forward_f = lambda x: -x
         self._exact_backward_f = lambda x: -np.ones_like(x)
         self._test_dims = range(5)
+
+
+class PowTest(FunctionTest):
+    class PowToCTest(UnaryFuncTest):
+        def __init__(self, c):
+            super().__init__()
+
+            self.__c = c
+
+        def setUp(self) -> None:
+            super().setUp()
+
+            self._target_f = Pow(self.__c)
+            self._exact_forward_f = lambda x: np.power(x, self.__c)
+            self._exact_backward_f = lambda x: self.__c * \
+                np.power(x, self.__c - 1)
+            self._test_dims = range(5)
+            self.num_tests = 10
+
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.__tests = []
+
+        for _ in range(10):
+            c = RNG.random() * 10 - 5
+            test = self.PowToCTest(c)
+            test.setUp()
+            self.__tests.append(test)
+
+    def test_forward(self):
+        for test in self.__tests:
+            test.test_forward()
+
+    def test_backward(self):
+        for test in self.__tests:
+            test.test_backward()
 
 
 if __name__ == '__main__':
