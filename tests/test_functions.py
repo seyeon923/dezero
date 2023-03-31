@@ -119,6 +119,7 @@ class UnaryFuncTest(FunctionTest):
         self._target_f = None
         self._exact_forward_f = None
         self._exact_backward_f = None
+        self._test_dims = []
 
     def _test_forward_nd(self, ndim):
         with self.subTest(f'{ndim}d input test'):
@@ -134,51 +135,104 @@ class UnaryFuncTest(FunctionTest):
                 self.assertBackwardWithInput(
                     self._target_f, x, exact_f=self._exact_backward_f)
 
+    def test_forward(self):
+        if type(self) == UnaryFuncTest:
+            self.skipTest(
+                f'Skip test for class {UnaryFuncTest.__name__} which is provided for automated test case generation')
+
+        self.assertTrue(len(self._test_dims) > 0,
+                        'empty _test_dims, pleas set _test_dims to automated test case generation')
+        for dim in self._test_dims:
+            self._test_forward_nd(dim)
+
+    def test_backward(self):
+        if type(self) == UnaryFuncTest:
+            self.skipTest(
+                f'Skip test for class {UnaryFuncTest.__name__} which is provided for automated test case generation')
+
+        self.assertTrue(len(self._test_dims) > 0,
+                        'empty _test_dims, pleas set _test_dims to automated test case generation')
+
+        for dim in self._test_dims:
+            self._test_backward_nd(dim)
+
 
 class SquareTest(UnaryFuncTest):
     def setUp(self) -> None:
+        super().setUp()
+
         self._target_f = Square()
         self._exact_forward_f = lambda x: x * x
         self._exact_backward_f = lambda x: 2*x
-
-    def test_forward(self):
-        self._test_forward_nd(0)
-        self._test_forward_nd(1)
-        self._test_forward_nd(2)
-        self._test_forward_nd(3)
-        self._test_forward_nd(4)
-        self._test_forward_nd(5)
-
-    def test_backward(self):
-        self._test_backward_nd(0)
-        self._test_backward_nd(1)
-        self._test_backward_nd(2)
-        self._test_backward_nd(3)
-        self._test_backward_nd(4)
-        self._test_backward_nd(5)
+        self._test_dims = range(5)
 
 
 class ExpTest(UnaryFuncTest):
     def setUp(self) -> None:
+        super().setUp()
+
         self._target_f = Exp()
         self._exact_forward_f = np.exp
         self._exact_backward_f = np.exp
+        self._test_dims = range(5)
 
-    def test_forward(self):
-        self._test_forward_nd(0)
-        self._test_forward_nd(1)
-        self._test_forward_nd(2)
-        self._test_forward_nd(3)
-        self._test_forward_nd(4)
-        self._test_forward_nd(5)
 
-    def test_backward(self):
-        self._test_backward_nd(0)
-        self._test_backward_nd(1)
-        self._test_backward_nd(2)
-        self._test_backward_nd(3)
-        self._test_backward_nd(4)
-        self._test_backward_nd(5)
+class SinTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Sin()
+        self._exact_forward_f = np.sin
+        self._exact_backward_f = np.cos
+        self._test_dims = range(5)
+
+
+class CosTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Cos()
+        self._exact_forward_f = np.cos
+        self._exact_backward_f = lambda x: -np.sin(x)
+        self._test_dims = range(5)
+
+
+class TanhTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Tanh()
+        self._exact_forward_f = np.tanh
+
+        def exact_bacward_f(x):
+            tanh_val = np.tanh(x)
+            return 1 - tanh_val * tanh_val
+        self._exact_backward_f = exact_bacward_f
+        self._test_dims = range(5)
+
+
+class SigmoidTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Sigmoid()
+        self._exact_forward_f = lambda x: 1 / (1 + np.exp(-x))
+
+        def exact_bacward_f(x):
+            sig_val = self._exact_forward_f(x)
+            return sig_val * (1 - sig_val)
+        self._exact_backward_f = exact_bacward_f
+        self._test_dims = range(5)
+
+
+class NegTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Neg()
+        self._exact_forward_f = lambda x: -x
+        self._exact_backward_f = lambda x: -np.ones_like(x)
+        self._test_dims = range(5)
 
 
 if __name__ == '__main__':
