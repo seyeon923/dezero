@@ -85,6 +85,9 @@ class Function:
     def backward(self, gys):
         raise NotImplementedError()
 
+    def __str__(self):
+        return self.name if self. name is not None else super().__str__()
+
 
 class Add(Function):
     def __init__(self):
@@ -298,7 +301,7 @@ class Variable:
         return self.__generation
 
     @property
-    def data(self):
+    def data(self) -> np.ndarray | None:
         return self.__data
 
     @data.setter

@@ -1,64 +1,184 @@
 import unittest
-import numpy as np
 import sys
 import os
+
+import numpy as np
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from dezero.functions import *  # nopep8
 from dezero import *  # nopep8
 
-
-def numerical_diff(f, x, eps=1e-4):
-    x0 = Variable(x.data - eps)
-    x1 = Variable(x.data + eps)
-    y0 = f(x0)
-    y1 = f(x1)
-    return (y1.data - y0.data) / 2 / eps
+RNG = np.random.default_rng(0)
 
 
-class SquareTest(unittest.TestCase):
+def numerical_diff(f: Function, *inputs: Variable | np.ndarray, eps=1e-6):
+    inputs = [as_variable(x) for x in inputs]
+
+    gxs = [np.zeros_like(x.data) for x in inputs]
+
+    with disable_backprob():
+        for i, gx in enumerate(gxs):
+            numel = gx.data.size
+            for i in range(numel):
+                x0 = inputs[i].data.copy()
+                x1 = inputs[i].data.copy()
+
+                val = x0.reshape(-1)[i]
+
+                x0.reshape(-1)[i] = val - eps
+                x1.reshape(-1)[i] = val + eps
+
+                y0: Variable = f(x0)
+                y1: Variable = f(x1)
+
+                val0 = y0.data.reshape(-1)[i]
+                val1 = y1.data.reshape(-1)[i]
+
+                grad = (val1 - val0) / eps / 2
+
+                gx.reshape(-1)[i] = grad
+
+    return [as_variable(gx) for gx in gxs]
+
+
+class FunctionTest(unittest.TestCase):
+    NUM_TESTS = 100
+    MAX_DIM_SIZE = 10
+    MAX_NDIM = 5
+
+    def assertHasGradient(self, var: Variable):
+        self.assertIsNotNone(var.grad)
+        self.assertTrue(var.data.shape == var.grad.shape)
+
+    def assertEqualVariable(self, actual, expected, atol=1e-8):
+        actual = as_variable(actual)
+        expected = as_variable(expected)
+        self.assertTrue(actual.shape == expected.shape)
+
+        if np.issubdtype(expected.data.dtype, np.floating):
+            self.assertTrue(np.allclose(actual.data, expected.data, atol=atol))
+        else:
+            self.assertTrue(np.all(actual.data == expected.data))
+
+    def assertForwardWithInput(self, target_f, exact_f, *inputs):
+        for x in inputs:
+            self.assertTrue(isinstance(x, np.ndarray),
+                            f'x: {x} is type of {type(x)}')
+
+        y_actual = target_f(*inputs)
+        y_expected = exact_f(*inputs)
+
+        with self.subTest(inputs=inputs, target_f=target_f):
+            self.assertEqualVariable(y_actual, y_expected)
+
+    def assertBackwardWithInput(self, target_f, *inputs, exact_f=None):
+        for x in inputs:
+            self.assertTrue(isinstance(x, np.ndarray),
+                            f'x: {x} is type of {type(x)}')
+
+        if exact_f is None:
+            gxs_expected = numerical_diff(target_f, *inputs)
+        else:
+            gxs_expected = [exact_f(x) for x in inputs]
+
+        inputs = [as_variable(x) for x in inputs]
+        with enable_backprob():
+            y: Variable = target_f(*inputs)
+            y.backward()
+
+        with self.subTest(inputs=inputs, target_f=target_f):
+            self.assertEqual(len(inputs), len(gxs_expected))
+
+            for i in range(len(inputs)):
+                gx_actual = inputs[i].grad
+                gx_expected = gxs_expected[i]
+
+                with self.subTest(f'{i}th input'):
+                    self.assertEqualVariable(gx_actual, gx_expected)
+
+    def get_rand_test_input(self, shape=None, ndim=None, min_ndim=0, max_ndim=MAX_NDIM, max_dim_size=MAX_DIM_SIZE,
+                            min_val=0, max_val=1, dtype=np.float32):
+        if shape is None:
+            if ndim is None:
+                ndim = int(RNG.random() * (max_ndim - min_ndim + 1) + min_ndim)
+
+            shape = []
+            for _ in range(ndim):
+                dim_size = int(RNG.random() * max_dim_size + 1)
+
+                shape.append(dim_size)
+
+        return np.array(RNG.random(shape, dtype=dtype) * (max_val - min_val) + min_val)
+
+
+class UnaryFuncTest(FunctionTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = None
+        self._exact_forward_f = None
+        self._exact_backward_f = None
+
+    def _test_forward_nd(self, ndim):
+        with self.subTest(f'{ndim}d input test'):
+            for _ in range(self.NUM_TESTS):
+                x = self.get_rand_test_input(ndim=ndim)
+                self.assertForwardWithInput(
+                    self._target_f, self._exact_forward_f, x)
+
+    def _test_backward_nd(self, ndim):
+        with self.subTest(f'{ndim}d input test'):
+            for _ in range(self.NUM_TESTS):
+                x = self.get_rand_test_input(ndim=ndim)
+                self.assertBackwardWithInput(
+                    self._target_f, x, exact_f=self._exact_backward_f)
+
+
+class SquareTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        self._target_f = Square()
+        self._exact_forward_f = lambda x: x * x
+        self._exact_backward_f = lambda x: 2*x
+
     def test_forward(self):
-        x = Variable(np.array(2.))
-        y = square(x)
-        expected = np.array(4.)
-        self.assertEqual(y.data, expected)
+        self._test_forward_nd(0)
+        self._test_forward_nd(1)
+        self._test_forward_nd(2)
+        self._test_forward_nd(3)
+        self._test_forward_nd(4)
+        self._test_forward_nd(5)
 
     def test_backward(self):
-        x = Variable(np.array(3.))
-        y = square(x)
-        y.backward()
-        expected = np.array(6.)
-        self.assertAlmostEqual(x.grad.data, expected)
-
-    def test_gradient_check(self):
-        x = Variable(np.random.rand(1))
-        y = square(x)
-        y.backward()
-        num_grad = numerical_diff(square, x)
-        self.assertTrue(np.allclose(x.grad.data, num_grad))
+        self._test_backward_nd(0)
+        self._test_backward_nd(1)
+        self._test_backward_nd(2)
+        self._test_backward_nd(3)
+        self._test_backward_nd(4)
+        self._test_backward_nd(5)
 
 
-class ExpTest(unittest.TestCase):
+class ExpTest(UnaryFuncTest):
+    def setUp(self) -> None:
+        self._target_f = Exp()
+        self._exact_forward_f = np.exp
+        self._exact_backward_f = np.exp
+
     def test_forward(self):
-        x = Variable(np.array(2.))
-        y = exp(x)
-        expected = np.exp(np.array(2.))
-        self.assertEqual(y.data, expected)
+        self._test_forward_nd(0)
+        self._test_forward_nd(1)
+        self._test_forward_nd(2)
+        self._test_forward_nd(3)
+        self._test_forward_nd(4)
+        self._test_forward_nd(5)
 
     def test_backward(self):
-        x = Variable(np.array(3.))
-        y = exp(x)
-        y.backward()
-        expected = np.exp(np.array(3.))
-        self.assertAlmostEqual(x.grad.data, expected)
-
-    def test_gradient_check(self):
-        x = Variable(np.random.rand(1))
-        y = exp(x)
-        y.backward()
-        num_grad = numerical_diff(exp, x)
-        self.assertTrue(np.allclose(x.grad.data, num_grad))
+        self._test_backward_nd(0)
+        self._test_backward_nd(1)
+        self._test_backward_nd(2)
+        self._test_backward_nd(3)
+        self._test_backward_nd(4)
+        self._test_backward_nd(5)
 
 
 if __name__ == '__main__':
