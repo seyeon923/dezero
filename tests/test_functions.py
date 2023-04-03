@@ -12,32 +12,42 @@ from dezero import *  # nopep8
 RNG = np.random.default_rng(0)
 
 
-def numerical_diff(f: Function, *inputs: Variable | np.ndarray, eps=1e-6):
-    inputs = [as_variable(x) for x in inputs]
-
-    gxs = [np.zeros_like(x.data) for x in inputs]
+def numerical_diff(f: Function, *orig_inputs: Variable | np.ndarray, eps=1e-6):
+    orig_inputs = [as_variable(x) for x in orig_inputs]
+    gxs = [np.zeros_like(x.data) for x in orig_inputs]
 
     with disable_backprob():
-        for i, gx in enumerate(gxs):
-            numel = gx.data.size
-            for i in range(numel):
-                x0 = inputs[i].data.copy()
-                x1 = inputs[i].data.copy()
+        for gx_idx, gx in enumerate(gxs):
+            inputs = [x.data.copy() for x in orig_inputs]
 
-                val = x0.reshape(-1)[i]
+            for x_elem_idx in range(gx.size):
+                x0 = orig_inputs[gx_idx].data.copy()
+                x1 = orig_inputs[gx_idx].data.copy()
 
-                x0.reshape(-1)[i] = val - eps
-                x1.reshape(-1)[i] = val + eps
+                val = x0.reshape(-1)[x_elem_idx]
 
-                y0: Variable = f(x0)
-                y1: Variable = f(x1)
+                x0.reshape(-1)[x_elem_idx] = val - eps
+                x1.reshape(-1)[x_elem_idx] = val + eps
 
-                val0 = y0.data.reshape(-1)[i]
-                val1 = y1.data.reshape(-1)[i]
+                inputs[gx_idx] = x0
+                ys0: tuple[Variable] = f(*inputs)
+                inputs[gx_idx] = x1
+                ys1: tuple[Variable] = f(*inputs)
 
-                grad = (val1 - val0) / eps / 2
+                if not isinstance(ys0, tuple) and not isinstance(ys0, list):
+                    ys0 = (ys0, )
+                if not isinstance(ys1, tuple) and not isinstance(ys1, list):
+                    ys1 = (ys1, )
 
-                gx.reshape(-1)[i] = grad
+                grad = 0
+
+                for y_idx in range(len(ys0)):
+                    y0 = as_variable(ys0[y_idx])
+                    y1 = as_variable(ys1[y_idx])
+
+                    grad += np.sum((y1.data - y0.data) / eps / 2)
+
+                gx.reshape(-1)[x_elem_idx] += grad
 
     return [as_variable(gx) for gx in gxs]
 
@@ -46,6 +56,12 @@ class FunctionTest(unittest.TestCase):
     MAX_DIM_SIZE = 10
     MAX_NDIM = 5
 
+    def setUp(self) -> None:
+        self._test_inputs: list[tuple] = []
+        self._target_f = None
+        self._exact_forward_f = None
+        self._exact_backward_f = None
+
     def assertHasGradient(self, var: Variable):
         self.assertIsNotNone(var.grad)
         self.assertTrue(var.data.shape == var.grad.shape)
@@ -53,7 +69,8 @@ class FunctionTest(unittest.TestCase):
     def assertEqualVariable(self, actual, expected, atol=1e-8):
         actual = as_variable(actual)
         expected = as_variable(expected)
-        self.assertTrue(actual.shape == expected.shape)
+        self.assertTrue(actual.shape == expected.shape,
+                        f'acutal shape = {actual.shape}, expected shape = {expected.shape}')
 
         if np.issubdtype(expected.data.dtype, np.floating):
             self.assertTrue(np.allclose(actual.data, expected.data, atol=atol))
@@ -68,8 +85,7 @@ class FunctionTest(unittest.TestCase):
         y_actual = target_f(*inputs)
         y_expected = exact_f(*inputs)
 
-        with self.subTest(inputs=inputs, target_f=target_f):
-            self.assertEqualVariable(y_actual, y_expected)
+        self.assertEqualVariable(y_actual, y_expected)
 
     def assertBackwardWithInput(self, target_f, *inputs, exact_f=None):
         for x in inputs:
@@ -77,24 +93,33 @@ class FunctionTest(unittest.TestCase):
                             f'x: {x} is type of {type(x)}')
 
         if exact_f is None:
-            gxs_expected = numerical_diff(target_f, *inputs)
+            eps = 1e-4
+            gxs_expected = numerical_diff(target_f, *inputs, eps=1e-4)
         else:
-            gxs_expected = [exact_f(x) for x in inputs]
+            eps = 1e-8
+            gxs_expected = exact_f(*inputs)
+
+        if not isinstance(gxs_expected, tuple) and not isinstance(gxs_expected, list):
+            gxs_expected = (gxs_expected, )
+
+        self.assertEqual(len(inputs), len(gxs_expected))
 
         inputs = [as_variable(x) for x in inputs]
         with enable_backprob():
-            y: Variable = target_f(*inputs)
-            y.backward()
+            ys = target_f(*inputs)
 
-        with self.subTest(inputs=inputs, target_f=target_f):
-            self.assertEqual(len(inputs), len(gxs_expected))
+            if not isinstance(ys, tuple) and not isinstance(ys, list):
+                ys = (ys,)
 
-            for i in range(len(inputs)):
-                gx_actual = inputs[i].grad
-                gx_expected = gxs_expected[i]
+            for y in ys:
+                y.backward()
 
-                with self.subTest(f'{i}th input'):
-                    self.assertEqualVariable(gx_actual, gx_expected)
+        for i in range(len(inputs)):
+            gx_actual = inputs[i].grad
+            gx_expected = gxs_expected[i]
+
+            with self.subTest(f'{i}th input\'s gradient check'):
+                self.assertEqualVariable(gx_actual, gx_expected, atol=eps*10)
 
     def get_rand_test_input(self, shape=None, ndim=None, min_ndim=0, max_ndim=MAX_NDIM, max_dim_size=MAX_DIM_SIZE,
                             min_val=0, max_val=1, dtype=np.float32):
@@ -110,94 +135,96 @@ class FunctionTest(unittest.TestCase):
 
         return np.array(RNG.random(shape, dtype=dtype) * (max_val - min_val) + min_val)
 
-
-class UnaryFuncTest(FunctionTest):
-    def setUp(self) -> None:
-        super().setUp()
-
-        self._target_f = None
-        self._exact_forward_f = None
-        self._exact_backward_f = None
-        self._test_dims = []
-        self.num_tests = 100
-
-    def _test_forward_nd(self, ndim):
-        with self.subTest(f'{ndim}d input test'):
-            for _ in range(self.num_tests):
-                x = self.get_rand_test_input(ndim=ndim)
-                self.assertForwardWithInput(
-                    self._target_f, self._exact_forward_f, x)
-
-    def _test_backward_nd(self, ndim):
-        with self.subTest(f'{ndim}d input test'):
-            for _ in range(self.num_tests):
-                x = self.get_rand_test_input(ndim=ndim)
-                self.assertBackwardWithInput(
-                    self._target_f, x, exact_f=self._exact_backward_f)
-
     def test_forward(self):
-        if type(self) == UnaryFuncTest:
+        if type(self) == FunctionTest:
             self.skipTest(
-                f'Skip test for class {UnaryFuncTest.__name__} which is provided for automated test case generation')
+                f'Skip test for class {FunctionTest.__name__} which is provided for automated test case generation')
 
-        self.assertTrue(len(self._test_dims) > 0,
-                        'empty _test_dims, pleas set _test_dims to automated test case generation')
-        for dim in self._test_dims:
-            self._test_forward_nd(dim)
+        self.assertTrue(len(self._test_inputs) > 0,
+                        'empty _test_inputs, pleas set _test_inputs to automated test case generation')
+
+        for test_input in self._test_inputs:
+            self.assertForwardWithInput(
+                self._target_f, self._exact_forward_f, *test_input)
 
     def test_backward(self):
-        if type(self) == UnaryFuncTest:
+        if type(self) == FunctionTest:
             self.skipTest(
-                f'Skip test for class {UnaryFuncTest.__name__} which is provided for automated test case generation')
+                f'Skip test for class {FunctionTest.__name__} which is provided for automated test case generation')
 
-        self.assertTrue(len(self._test_dims) > 0,
-                        'empty _test_dims, pleas set _test_dims to automated test case generation')
+        self.assertTrue(len(self._test_inputs) > 0,
+                        'empty _test_inputs, pleas set _test_inputs to automated test case generation')
 
-        for dim in self._test_dims:
-            self._test_backward_nd(dim)
+        for test_input in self._test_inputs:
+            self.assertBackwardWithInput(
+                self._target_f, *test_input, exact_f=self._exact_backward_f)
 
 
-class SquareTest(UnaryFuncTest):
+class SquareTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
         self._target_f = Square()
         self._exact_forward_f = lambda x: x * x
         self._exact_backward_f = lambda x: 2*x
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class ExpTest(UnaryFuncTest):
+class ExpTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
         self._target_f = Exp()
         self._exact_forward_f = np.exp
         self._exact_backward_f = np.exp
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class SinTest(UnaryFuncTest):
+class SinTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
         self._target_f = Sin()
         self._exact_forward_f = np.sin
         self._exact_backward_f = np.cos
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class CosTest(UnaryFuncTest):
+class CosTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
         self._target_f = Cos()
         self._exact_forward_f = np.cos
         self._exact_backward_f = lambda x: -np.sin(x)
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class TanhTest(UnaryFuncTest):
+class TanhTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
@@ -208,10 +235,16 @@ class TanhTest(UnaryFuncTest):
             tanh_val = np.tanh(x)
             return 1 - tanh_val * tanh_val
         self._exact_backward_f = exact_bacward_f
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class SigmoidTest(UnaryFuncTest):
+class SigmoidTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
@@ -222,21 +255,33 @@ class SigmoidTest(UnaryFuncTest):
             sig_val = self._exact_forward_f(x)
             return sig_val * (1 - sig_val)
         self._exact_backward_f = exact_bacward_f
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
-class NegTest(UnaryFuncTest):
+class NegTest(FunctionTest):
     def setUp(self) -> None:
         super().setUp()
 
         self._target_f = Neg()
         self._exact_forward_f = lambda x: -x
         self._exact_backward_f = lambda x: -np.ones_like(x)
-        self._test_dims = range(5)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(ndim=0),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=1),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=2),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=3),))
+            self._test_inputs.append((self.get_rand_test_input(ndim=4),))
 
 
 class PowTest(FunctionTest):
-    class PowToCTest(UnaryFuncTest):
+    class PowToCTest(FunctionTest):
         def __init__(self, c):
             super().__init__()
 
@@ -249,8 +294,13 @@ class PowTest(FunctionTest):
             self._exact_forward_f = lambda x: np.power(x, self.__c)
             self._exact_backward_f = lambda x: self.__c * \
                 np.power(x, self.__c - 1)
-            self._test_dims = range(5)
-            self.num_tests = 10
+
+            for _ in range(10):
+                self._test_inputs.append((self.get_rand_test_input(ndim=0), ))
+                self._test_inputs.append((self.get_rand_test_input(ndim=1), ))
+                self._test_inputs.append((self.get_rand_test_input(ndim=2), ))
+                self._test_inputs.append((self.get_rand_test_input(ndim=3), ))
+                self._test_inputs.append((self.get_rand_test_input(ndim=4), ))
 
     def setUp(self) -> None:
         super().setUp()
@@ -270,6 +320,36 @@ class PowTest(FunctionTest):
     def test_backward(self):
         for test in self.__tests:
             test.test_backward()
+
+
+class AddTest(FunctionTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Add()
+        self._exact_forward_f = lambda x0, x1: x0 + x1
+        self._exact_backward_f = lambda x0, x1: (
+            np.ones_like(x0), np.ones_like(x1))
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(
+                ndim=0), self.get_rand_test_input(ndim=0)))
+
+            x0 = self.get_rand_test_input(ndim=1)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=2)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=3)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=4)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
 
 
 if __name__ == '__main__':
