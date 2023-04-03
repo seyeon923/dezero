@@ -382,5 +382,63 @@ class SubTest(FunctionTest):
             self._test_inputs.append((x0, x1))
 
 
+class MulTest(FunctionTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Mul()
+        self._exact_forward_f = lambda x0, x1: x0 * x1
+        self._exact_backward_f = lambda x0, x1: (x1, x0)
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(
+                ndim=0), self.get_rand_test_input(ndim=0)))
+
+            x0 = self.get_rand_test_input(ndim=1)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=2)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=3)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=4)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+
+class DivTest(FunctionTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self._target_f = Div()
+        self._exact_forward_f = lambda x0, x1: x0 / x1
+        self._exact_backward_f = lambda x0, x1: (1 / x1, -x0 / (x1*x1))
+
+        for _ in range(100):
+            self._test_inputs.append((self.get_rand_test_input(
+                ndim=0), self.get_rand_test_input(ndim=0)))
+
+            x0 = self.get_rand_test_input(ndim=1)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=2)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=3)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+            x0 = self.get_rand_test_input(ndim=4)
+            x1 = RNG.random(x0.shape)
+            self._test_inputs.append((x0, x1))
+
+
 if __name__ == '__main__':
     unittest.main()
