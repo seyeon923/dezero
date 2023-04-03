@@ -378,16 +378,18 @@ class Variable:
         return x
 
 
-Variable.__add__ = add
-Variable.__radd__ = add
-Variable.__sub__ = sub
-Variable.__rsub__ = lambda self, other: sub(other, self)
-Variable.__mul__ = mul
-Variable.__rmul__ = mul
-Variable.__truediv__ = div
-Variable.__rtruediv__ = lambda self, other: div(other, self)
-Variable.__neg__ = neg
-Variable.__pow__ = pow
+def _setup_variable():
+    Variable.__add__ = add
+    Variable.__radd__ = add
+    Variable.__sub__ = sub
+    Variable.__rsub__ = lambda self, other: sub(other, self)
+    Variable.__mul__ = mul
+    Variable.__rmul__ = mul
+    Variable.__truediv__ = div
+    Variable.__rtruediv__ = lambda self, other: div(other, self)
+    Variable.__neg__ = neg
+    Variable.__pow__ = pow
+    Variable.__getitem__ = dezero.functions.get_item
 
 
 class Parameter(Variable):

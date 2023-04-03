@@ -1,5 +1,6 @@
-__all__ = ['Variable', 'Function', 'Parameter', 'Layer', 'Model', 'using_config',
-           'enable_backprob', 'disable_backprob', 'as_variable', 'Config']
+__all__ = ['Variable', 'Function', 'Parameter', 'Layer', 'Model', 'Optimizer',
+           'using_config', 'enable_backprob', 'disable_backprob', 'as_variable', 'Config',
+           'functions', 'layers', 'models', 'optimizers']
 
 __is_simple_core = False
 
@@ -14,6 +15,7 @@ if __is_simple_core:
 else:
     from .core import Variable
     from .core import Function
+    from . import functions
     from .core import Config
     from .core import using_config
     from .core import enable_backprob
@@ -21,4 +23,11 @@ else:
     from .core import as_variable
     from .core import Parameter
     from .layers import Layer
+    from . import layers
     from .models import Model
+    from . import models
+    from .optimizers import Optimizer
+    from . import optimizers
+
+    from .core import _setup_variable
+    _setup_variable()

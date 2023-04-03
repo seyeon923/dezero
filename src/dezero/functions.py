@@ -1,7 +1,8 @@
 __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg', 'Pow', 'pow',
            'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos', 'Tanh', 'tanh',
            'Reshape', 'reshape', 'Transpose', 'transpose', 'SumTo', 'sum_to', 'BroadcastTo', 'broadcast_to',
-           'Matmul', 'matmul', 'MatmulAdd', 'matmul_add', 'Sum', 'sum', 'MSE', 'mse', 'Sigmoid', 'sigmoid']
+           'Matmul', 'matmul', 'MatmulAdd', 'matmul_add', 'Sum', 'sum', 'MSE', 'mse', 'Sigmoid', 'sigmoid',
+           'GetItem', 'get_item']
 import numpy as np
 
 from . import __is_simple_core
@@ -298,6 +299,29 @@ class Sigmoid(Function):
 
 def sigmoid(x: Variable):
     return Sigmoid()(x)
+
+
+class GetItem(Function):
+    def __init__(self, slices):
+        super().__init__(name=f'GetItem({slices})')
+
+        self.__slices = slices
+
+    def forward(self, x):
+        return x[self.__slices]
+
+    def backward(self, gy):
+        x, = self.inputs
+
+        gx = Variable(np.zeros_like(x.data))
+
+        gx.data[self.__slices] = gy
+
+        return gx
+
+
+def get_item(x, *slices):
+    return GetItem(slices)(x)
 
 
 if __name__ == '__main__':

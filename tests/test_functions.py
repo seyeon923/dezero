@@ -7,7 +7,6 @@ import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from dezero.functions import *  # nopep8
-from dezero import models  # nopep8
 from dezero import *  # nopep8
 
 RNG = np.random.default_rng(0)
