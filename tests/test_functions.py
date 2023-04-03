@@ -366,19 +366,19 @@ class SubTest(FunctionTest):
                 ndim=0), self.get_rand_test_input(ndim=0)))
 
             x0 = self.get_rand_test_input(ndim=1)
-            x1 = RNG.random(x0.shape)
+            x1 = self.get_rand_test_input(shape=x0.shape)
             self._test_inputs.append((x0, x1))
 
             x0 = self.get_rand_test_input(ndim=2)
-            x1 = RNG.random(x0.shape)
+            x1 = self.get_rand_test_input(shape=x0.shape)
             self._test_inputs.append((x0, x1))
 
             x0 = self.get_rand_test_input(ndim=3)
-            x1 = RNG.random(x0.shape)
+            x1 = self.get_rand_test_input(shape=x0.shape)
             self._test_inputs.append((x0, x1))
 
             x0 = self.get_rand_test_input(ndim=4)
-            x1 = RNG.random(x0.shape)
+            x1 = self.get_rand_test_input(shape=x0.shape)
             self._test_inputs.append((x0, x1))
 
 
@@ -438,6 +438,78 @@ class DivTest(FunctionTest):
             x0 = self.get_rand_test_input(ndim=4)
             x1 = RNG.random(x0.shape)
             self._test_inputs.append((x0, x1))
+
+
+class ReshapeTest(FunctionTest):
+    class _ReshapeTest(FunctionTest):
+        def __init__(self, from_shape, to_shape):
+            super().__init__()
+
+            self._target_f = Reshape(to_shape)
+            self._exact_forward_f = lambda x: np.reshape(x, to_shape)
+            self._exact_backward_f = lambda x: np.ones_like(x)
+
+            self._test_inputs = []
+            for _ in range(10):
+                self._test_inputs.append(
+                    (self.get_rand_test_input(shape=from_shape), ))
+
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.__tests = [
+            self._ReshapeTest((5, 5), (25,)),
+            self._ReshapeTest((25,), (5, 5)),
+            self._ReshapeTest((3, 4, 5), (5, 4, 3)),
+            self._ReshapeTest((28, 1), (4, 7)),
+            self._ReshapeTest((2, 4, 5), (8, 5)),
+            self._ReshapeTest((2, 9), (3, 6)),
+            self._ReshapeTest((4, 52, 2), (8, 26, 2)),
+        ]
+
+    def test_forward(self):
+        for test in self.__tests:
+            test.test_forward()
+
+    def test_backward(self):
+        for test in self.__tests:
+            test.test_backward()
+
+
+class TransposeTest(FunctionTest):
+    class _TransposeTest(FunctionTest):
+        def __init__(self, ndim, axes=None):
+            super().__init__()
+
+            self._target_f = Transpose(axes=axes)
+            self._exact_forward_f = lambda x: np.transpose(x, axes=axes)
+            self._exact_backward_f = lambda x: np.ones_like(x)
+
+            self._test_inputs = []
+            for _ in range(10):
+                self._test_inputs.append(
+                    (self.get_rand_test_input(ndim=ndim), ))
+
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.__tests = [
+            self._TransposeTest(2,),
+            self._TransposeTest(3),
+            self._TransposeTest(4),
+            self._TransposeTest(3, [1, 0, 2]),
+            self._TransposeTest(4, [2, 0, 1, 3]),
+            self._TransposeTest(4, [0, 2, 1, 3]),
+            self._TransposeTest(4, [3, 1, 2, 0]),
+        ]
+
+    def test_forward(self):
+        for test in self.__tests:
+            test.test_forward()
+
+    def test_backward(self):
+        for test in self.__tests:
+            test.test_backward()
 
 
 if __name__ == '__main__':
