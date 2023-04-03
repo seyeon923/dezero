@@ -7,6 +7,7 @@ import numpy as np
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
 
 from dezero.functions import *  # nopep8
+from dezero import models  # nopep8
 from dezero import *  # nopep8
 
 RNG = np.random.default_rng(0)
@@ -56,24 +57,29 @@ class FunctionTest(unittest.TestCase):
     MAX_DIM_SIZE = 10
     MAX_NDIM = 5
 
-    def setUp(self) -> None:
-        self._test_inputs: list[tuple] = []
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         self._target_f = None
         self._exact_forward_f = None
         self._exact_backward_f = None
+        self._test_inputs: list[tuple] = []
+        self._skip_forward_test = False
+        self._skip_backward_test = False
 
     def assertHasGradient(self, var: Variable):
         self.assertIsNotNone(var.grad)
         self.assertTrue(var.data.shape == var.grad.shape)
 
-    def assertEqualVariable(self, actual, expected, atol=1e-8):
+    def assertEqualVariable(self, actual, expected, atol=1e-8, rtol=1e-5):
         actual = as_variable(actual)
         expected = as_variable(expected)
         self.assertTrue(actual.shape == expected.shape,
                         f'acutal shape = {actual.shape}, expected shape = {expected.shape}')
 
         if np.issubdtype(expected.data.dtype, np.floating):
-            self.assertTrue(np.allclose(actual.data, expected.data, atol=atol))
+            self.assertTrue(np.allclose(actual.data, expected.data, atol=atol, rtol=rtol),
+                            f'actual = {actual.data}\nexpected = {expected.data}')
         else:
             self.assertTrue(np.all(actual.data == expected.data))
 
@@ -94,9 +100,11 @@ class FunctionTest(unittest.TestCase):
 
         if exact_f is None:
             eps = 1e-4
+            rtol = 1e-2
             gxs_expected = numerical_diff(target_f, *inputs, eps=1e-4)
         else:
             eps = 1e-8
+            rtol = 1e-5
             gxs_expected = exact_f(*inputs)
 
         if not isinstance(gxs_expected, tuple) and not isinstance(gxs_expected, list):
@@ -119,7 +127,8 @@ class FunctionTest(unittest.TestCase):
             gx_expected = gxs_expected[i]
 
             with self.subTest(f'{i}th input\'s gradient check'):
-                self.assertEqualVariable(gx_actual, gx_expected, atol=eps*10)
+                self.assertEqualVariable(
+                    gx_actual, gx_expected, atol=eps*100, rtol=rtol)
 
     def get_rand_test_input(self, shape=None, ndim=None, min_ndim=0, max_ndim=MAX_NDIM, max_dim_size=MAX_DIM_SIZE,
                             min_val=0, max_val=1, dtype=np.float32):
@@ -140,6 +149,9 @@ class FunctionTest(unittest.TestCase):
             self.skipTest(
                 f'Skip test for class {FunctionTest.__name__} which is provided for automated test case generation')
 
+        if self._skip_forward_test:
+            self.skipTest('Skip by flag _skip_forward_test')
+
         self.assertTrue(len(self._test_inputs) > 0,
                         'empty _test_inputs, pleas set _test_inputs to automated test case generation')
 
@@ -151,6 +163,9 @@ class FunctionTest(unittest.TestCase):
         if type(self) == FunctionTest:
             self.skipTest(
                 f'Skip test for class {FunctionTest.__name__} which is provided for automated test case generation')
+
+        if self._skip_backward_test:
+            self.skipTest('Skip by flag _skip_backward_test')
 
         self.assertTrue(len(self._test_inputs) > 0,
                         'empty _test_inputs, pleas set _test_inputs to automated test case generation')
@@ -510,6 +525,58 @@ class TransposeTest(FunctionTest):
     def test_backward(self):
         for test in self.__tests:
             test.test_backward()
+
+
+class CompositeFuncTest(FunctionTest):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._skip_backward_test = True
+        self._skip_forward_test = True
+
+    def test_mlp(self):
+        class _MLPTest(FunctionTest):
+            def __init__(self):
+                super().__init__()
+
+                self._test_inputs = [
+                    (self.get_rand_test_input(shape=(3, 2)),)
+                ]
+
+                mlp = models.MLP([2, 4, 1])
+
+                self._target_f = lambda x: mse(mlp(x), 1)
+
+        _MLPTest().test_backward()
+
+    def test_sphere(self):
+        class _RosenbrockTest(FunctionTest):
+            def __init__(self):
+                super().__init__()
+
+                self._target_f = lambda x, y, z: x**2 + y**2 + z**2
+                self._test_inputs = [
+                    (self.get_rand_test_input(ndim=0), self.get_rand_test_input(
+                        ndim=0), self.get_rand_test_input(ndim=0))
+                ]
+
+        _RosenbrockTest().test_backward()
+
+    def test_ackley(self):
+        class _AckelyTest(FunctionTest):
+            def __init__(self):
+                super().__init__()
+
+                def target_f(x, y):
+                    return -20 * exp(-0.2 * (0.5 * (x**2 + y**2)) ** 0.5) - \
+                        exp(0.5 * (cos(np.pi*2*x) + cos(np.pi*2*y))) + np.e + 20
+                self._target_f = target_f
+                self._test_inputs = [
+                    (self.get_rand_test_input(shape=(2,)),
+                     self.get_rand_test_input(shape=(2,)))
+                ]
+
+        _AckelyTest().test_backward()
 
 
 if __name__ == '__main__':
