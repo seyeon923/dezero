@@ -490,6 +490,37 @@ class ReshapeTest(FunctionTest):
             test.test_backward()
 
 
+class SoftmaxTest(FunctionTest):
+    def setUp(self) -> None:
+        super().setUp()
+
+        answer = np.array([[1, 0, 0]])
+
+        def target_f(x):
+            return mse(softmax(x), answer)
+
+        def softmax_simple(x):
+            e = exp(x)
+            return e / sum(e, axis=-1, keepdims=True)
+
+        def expected_forward(x):
+            return mse(softmax_simple(x), answer)
+
+        def expected_backward(x):
+            x = as_variable(x)
+            with enable_backprob():
+                y = mse(softmax_simple(x), answer)
+                y.backward()
+            return x.grad
+
+        self._target_f = target_f
+        self._test_inputs = [
+            (self.get_rand_test_input(shape=(100, 3)), )
+        ]
+        self._exact_forward_f = expected_forward
+        self._exact_backward_f = expected_backward
+
+
 class TransposeTest(FunctionTest):
     class _TransposeTest(FunctionTest):
         def __init__(self, ndim, axes=None):

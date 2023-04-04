@@ -2,7 +2,7 @@ __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg',
            'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos', 'Tanh', 'tanh',
            'Reshape', 'reshape', 'Transpose', 'transpose', 'SumTo', 'sum_to', 'BroadcastTo', 'broadcast_to',
            'Matmul', 'matmul', 'MatmulAdd', 'matmul_add', 'Sum', 'sum', 'MSE', 'mse', 'Sigmoid', 'sigmoid',
-           'GetItem', 'get_item']
+           'GetItem', 'get_item', 'Softmax', 'softmax']
 import numpy as np
 
 from . import __is_simple_core
@@ -268,14 +268,14 @@ class MSE(Function):
     def forward(self, x0, x1):
         diff = x0 - x1
 
-        return np.sum(diff*diff) / len(diff)
+        return np.sum(diff*diff) / diff.size
 
     def backward(self, gy):
         x0, x1 = self.inputs
 
         diff = x0 - x1
 
-        gx0 = diff*2/len(diff) * gy
+        gx0 = diff * 2 / diff.size * gy
         gx1 = -gx0
 
         return gx0, gx1
@@ -322,6 +322,31 @@ class GetItem(Function):
 
 def get_item(x, *slices):
     return GetItem(slices)(x)
+
+
+class Softmax(Function):
+    def __init__(self, axis=-1):
+        super().__init__(name=f'Softmax({axis})')
+
+        self.__axis = axis
+
+    def forward(self, x):
+        x = x - np.max(x, axis=self.__axis, keepdims=True)
+        e = np.exp(x)
+        return e / np.sum(e, axis=self.__axis, keepdims=True)
+
+    def backward(self, gy):
+        y = self.outputs[0]()
+
+        gx = y * gy
+        sumdx = sum(gx, axis=self.__axis, keepdims=True)
+        gx -= y * sumdx
+
+        return gx
+
+
+def softmax(x, axis=-1):
+    return Softmax(axis=axis)(x)
 
 
 if __name__ == '__main__':
