@@ -254,6 +254,18 @@ class Sum(Function):
         return np.sum(x, axis=self.__axis, keepdims=self.__keepdims)
 
     def backward(self, gy):
+        if not self.__keepdims:
+            shape = list(self.__x_shape)
+
+            axis = self.__axis
+            if isinstance(self.__axis, int):
+                axis = (axis, )
+
+            for ax in axis:
+                shape[ax] = 1
+
+            gy = reshape(gy, shape)
+
         return broadcast_to(gy, self.__x_shape)
 
 

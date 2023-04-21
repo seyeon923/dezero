@@ -353,3 +353,10 @@ y.backward()
 
 assert x.grad.shape == x.data.shape
 assert w.grad.shape == w.data.shape
+
+x = dz.Variable([[1, 2, 3], [4, 5, 6]])
+y = functions.sum(x, axis=1, keepdims=False)
+assert y.shape == (2,)
+y.backward()  # 에러 발생!, check dezero.utils.reshape_sum_backward
+assert x.shape == x.grad.shape
+assert np.all(x.grad.data == np.array([[1, 1, 1], [1, 1, 1]]))
