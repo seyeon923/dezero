@@ -354,6 +354,13 @@ y.backward()
 assert x.grad.shape == x.data.shape
 assert w.grad.shape == w.data.shape
 
+x = dz.Variable([[1, 2, 3], [4, 5, 6]])
+y = functions.sum(x, axis=1, keepdims=False)
+assert y.shape == (2,)
+y.backward()
+assert x.shape == x.grad.shape
+assert np.all(x.grad.data == np.array([[1, 1, 1], [1, 1, 1]]))
+
 model = dz.models.MLP((10, 2))
 x = np.array([[0.2, -0.4], [0.3, 0.5], [1.3, -3.2], [2.1, 0.3]])
 t = np.array([0, 1, 0, 1])
