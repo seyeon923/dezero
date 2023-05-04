@@ -349,6 +349,67 @@ def softmax(x, axis=-1):
     return Softmax(axis=axis)(x)
 
 
+class Clip(Function):
+    def __init__(self, min_val, max_val):
+        super().__init__(name=f'Clip({min_val}, {max_val})')
+
+        self.__min_val = min_val
+        self.__max_val = max_val
+
+        self.__mask = None
+
+    def forward(self, x):
+        self.__mask = (x >= self.__min_val) & (x <= self.__max_val)
+        lt_min_mask = x < self.__min_val
+        gt_max_mask = x > self.__max_val
+
+        y = np.zeros_like(x)
+        y[lt_min_mask] = self.__min_val
+        y[self.__mask] = x[self.__mask]
+        y[gt_max_mask] = self.__max_val
+
+        return y
+
+    def backward(self, gy):
+        gx = Variable(np.zeros_like(self.inputs[0]))
+        gx[self.__mask] = gy[self.__mask]
+
+        return gx
+
+
+def clip(x, min_val, max_val):
+    return Clip(min_val, max_val)(x)
+
+
+class Log(Function):
+    def __init__(self):
+        super().__init__(name='Log')
+
+    def forward(self, x):
+        return np.log(x)
+
+    def backward(self, gy):
+        x, = self.inputs
+
+        return gy / x
+
+
+def log(x):
+    return Log()(x)
+
+
+def softmax_cross_entropy_simple(x, t):
+    x, t = as_variable(x), as_variable(t)
+    n = np.sum(x.shape[:-1])
+
+    p = softmax(x)
+    p = clip(p, 1e-15, 1.0)
+    log_p = log(p)
+    slices = tuple([slice(None, None, None)] * (x.ndim - 1) + [t.data])
+    tlog_p = get_item(log_p, *slices)
+    return -1 * sum(tlog_p) / n
+
+
 if __name__ == '__main__':
     x = Variable(np.pi / 4)
     y = sin(x)

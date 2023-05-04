@@ -353,3 +353,10 @@ y.backward()
 
 assert x.grad.shape == x.data.shape
 assert w.grad.shape == w.data.shape
+
+model = dz.models.MLP((10, 2))
+x = np.array([[0.2, -0.4], [0.3, 0.5], [1.3, -3.2], [2.1, 0.3]])
+t = np.array([0, 1, 0, 1])
+y = model(x)
+loss = dz.functions.softmax_cross_entropy_simple(y, t)
+print(loss)
