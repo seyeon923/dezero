@@ -367,3 +367,10 @@ t = np.array([0, 1, 0, 1])
 y = model(x)
 loss = dz.functions.softmax_cross_entropy_simple(y, t)
 print(loss)
+
+x = dz.Variable([[1, 2, 3], [4, 5, 6]])
+assert x[0, 1].data == 2
+assert np.all(x[:, 2].data == np.array([3, 6]))
+assert np.all(x[1, :].data == np.array([4, 5, 6]))
+assert np.all(x[:, :].data == x.data)
+assert np.all(x[:].data == x.data)

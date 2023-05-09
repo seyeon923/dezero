@@ -258,6 +258,9 @@ class Sum(Function):
             shape = list(self.__x_shape)
 
             axis = self.__axis
+
+            if axis is None:
+                axis = list(range(len(shape)))
             if isinstance(self.__axis, int):
                 axis = (axis, )
 
@@ -323,17 +326,30 @@ class GetItem(Function):
         return x[self.__slices]
 
     def backward(self, gy):
-        x, = self.inputs
+        return GetItemGrad(self.__slices, self.inputs[0].shape)(gy)
 
-        gx = Variable(np.zeros_like(x.data))
 
-        gx.data[self.__slices] = gy
+def get_item(x, slices):
+    return GetItem(slices)(x)
 
+
+class GetItemGrad(Function):
+    def __init__(self, gx_slices, gx_shape, gy_slices=slice(None, None, None)):
+        super().__init__(
+            name=f'GetItemGrad(gx_slices={gx_slices}, gx_shape={gx_shape}, gy_slices={gy_slices})')
+
+        self.__gx_slices = gx_slices
+        self.__gx_shape = gx_shape
+        self.__gy_slices = gy_slices
+
+    def forward(self, gy):
+        gx = np.zeros(self.__gx_shape, dtype=gy.dtype)
+
+        gx[self.__gx_slices] = gy[self.__gy_slices]
         return gx
 
-
-def get_item(x, *slices):
-    return GetItem(slices)(x)
+    def backward(self, ggx):
+        return get_item(ggx, self.__slices)
 
 
 class Softmax(Function):
@@ -383,10 +399,7 @@ class Clip(Function):
         return y
 
     def backward(self, gy):
-        gx = Variable(np.zeros_like(self.inputs[0]))
-        gx[self.__mask] = gy[self.__mask]
-
-        return gx
+        return GetItemGrad(self.__mask, self.inputs[0].shape, self.__mask)(gy)
 
 
 def clip(x, min_val, max_val):
@@ -416,9 +429,10 @@ def softmax_cross_entropy_simple(x, t):
 
     p = softmax(x)
     p = clip(p, 1e-15, 1.0)
-    log_p = log(p)
-    slices = tuple([slice(None, None, None)] * (x.ndim - 1) + [t.data])
-    tlog_p = get_item(log_p, *slices)
+    log_p = reshape(log(p), (n, -1))
+    assert log_p.shape == (n, x.shape[-1])
+    slices = (range(n), t.data)
+    tlog_p = get_item(log_p, slices)
     return -1 * sum(tlog_p) / n
 
 
