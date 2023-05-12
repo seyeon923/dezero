@@ -9,7 +9,7 @@ from import_dezero import *
 max_epoch = 300
 batch_size = 30
 hidden_size = 10
-lr = 1.0
+lr = 0.01
 
 train_set = datasets.Spiral(train=True)
 test_set = datasets.Spiral(train=False)
@@ -21,7 +21,7 @@ train_loader = datasets.DataLoader(train_set, batch_size)
 test_loader = datasets.DataLoader(test_set, batch_size, shuffle=False)
 
 model = models.MLP((hidden_size, 3))
-optimizer = optimizers.SGD(lr).setup(model)
+optimizer = optimizers.Adam(lr).setup(model)
 
 x_min, x_max, y_min, y_max = 100, -100, 100, -100
 

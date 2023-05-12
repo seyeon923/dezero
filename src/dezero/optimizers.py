@@ -58,3 +58,41 @@ class MomentumSGD(Optimizer):
         v *= self.momentum
         v -= self.lr * param.grad.data
         param.data += v
+
+
+class Adam(Optimizer):
+    def __init__(self, lr=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        super().__init__()
+
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.epsilon = epsilon
+
+        self.__v = {}
+        self.__s = {}
+
+        self.__t = {}
+
+    def update_one(self, param):
+        param_key = id(param)
+        if param_key not in self.__v:
+            self.__v[param_key] = np.zeros_like(param.data)
+            self.__s[param_key] = np.zeros_like(param.data)
+
+            self.__t[param_key] = 1
+
+        v = self.__v[param_key]
+        s = self.__s[param_key]
+
+        t = self.__t[param_key]
+
+        grad = param.grad.data
+
+        v = (self.beta1 * v) + (1 - self.beta1) * grad
+        s = (self.beta2 * s) + (1 - self.beta2) * grad * grad
+
+        v /= 1 - self.beta1**t
+        s /= 1 - self.beta2**t
+
+        param.data -= self.lr * v / (np.sqrt(s) + self.epsilon)
