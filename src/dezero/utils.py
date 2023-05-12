@@ -3,7 +3,7 @@ import os
 import traceback
 import sys
 import subprocess
-import urllib
+import urllib.request
 
 from string import Template
 from io import StringIO

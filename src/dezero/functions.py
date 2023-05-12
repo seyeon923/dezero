@@ -2,7 +2,7 @@ __all__ = ['Add', 'add', 'Sub', 'sub', 'Mul', 'mul', 'Div', 'div', 'Neg', 'neg',
            'Square', 'square', 'Exp', 'exp', 'Sin', 'sin', 'Cos', 'cos', 'Tanh', 'tanh',
            'Reshape', 'reshape', 'Transpose', 'transpose', 'SumTo', 'sum_to', 'BroadcastTo', 'broadcast_to',
            'Matmul', 'matmul', 'MatmulAdd', 'matmul_add', 'Sum', 'sum', 'MSE', 'mse', 'Sigmoid', 'sigmoid',
-           'GetItem', 'get_item', 'Softmax', 'softmax']
+           'GetItem', 'get_item', 'Softmax', 'softmax', 'ReLU', 'relu']
 import numpy as np
 
 from . import __is_simple_core
@@ -434,6 +434,21 @@ def softmax_cross_entropy_simple(x, t):
     slices = (range(n), t.data)
     tlog_p = get_item(log_p, slices)
     return -1 * sum(tlog_p) / n
+
+
+class ReLU(Function):
+    def __init__(self):
+        super().__init__(name='ReLU')
+
+    def forward(self, x):
+        return np.maximum(x, 0.0)
+
+    def backward(self, gy):
+        return gy * (self.inputs[0].data > 0)
+
+
+def relu(x):
+    return ReLU()(x)
 
 
 if __name__ == '__main__':
