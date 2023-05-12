@@ -26,9 +26,12 @@ optimizer = optimizers.SGD(lr).setup(model)
 x_min, x_max, y_min, y_max = 100, -100, 100, -100
 
 train_losses = []
+train_accs = []
 test_losses = []
+test_accs = []
 for epoch in range(max_epoch):
     sum_loss = 0
+    sum_acc = 0
     for x, t in train_loader:
         y = model(x)
         loss = functions.softmax_cross_entropy_simple(y, t)
@@ -37,6 +40,7 @@ for epoch in range(max_epoch):
         optimizer.update()
 
         sum_loss += float(loss.data) * len(t)
+        sum_acc += float(metrics.accuracy(y, t).data) * len(t)
 
         local_x_min = np.min(x)
         local_x_max = np.max(x)
@@ -53,14 +57,17 @@ for epoch in range(max_epoch):
             y_max = local_y_max
 
     train_loss = sum_loss / train_size
+    train_acc = sum_acc / train_size
 
     sum_loss = 0
+    sum_acc = 0
     for x, t in test_loader:
         with dz.disable_backprob():
             y = model(x)
             loss = functions.softmax_cross_entropy_simple(y, t)
 
             sum_loss += float(loss.data) * len(t)
+            sum_acc += float(metrics.accuracy(y, t).data) * len(t)
 
         local_x_min = np.min(x)
         local_x_max = np.max(x)
@@ -77,14 +84,17 @@ for epoch in range(max_epoch):
             y_max = local_y_max
 
     test_loss = sum_loss / test_size
+    test_acc = sum_acc / test_size
 
     train_losses.append(train_loss)
+    train_accs.append(train_acc)
     test_losses.append(test_loss)
+    test_accs.append(test_acc)
 
     print(
-        f'epoch {epoch + 1}, train loss: {train_loss:.2f}, test loss: {test_loss:.2f}')
+        f'epoch {epoch + 1:03d}: train loss={train_loss:.2f}, train_acc={train_acc:.2f}, test loss={test_loss:.2f}, test_acc={test_acc:.2f}')
 
-plt.subplot(1, 2, 1)
+plt.subplot(3, 2, 1)
 plt.title('Loss per Epoch')
 plt.xlabel('epoch')
 plt.ylabel('loss')
@@ -92,7 +102,15 @@ plt.plot(range(1, 1+max_epoch), train_losses, label='Train Loss')
 plt.plot(range(1, 1+max_epoch), test_losses, label='Test Loss')
 plt.legend()
 
-plt.subplot(1, 2, 2)
+plt.subplot(3, 2, 2)
+plt.title('Accuracy per Epoch')
+plt.xlabel('epoch')
+plt.ylabel('accuracy')
+plt.plot(range(1, 1+max_epoch), train_accs, label='Train Accuracy')
+plt.plot(range(1, 1+max_epoch), test_accs, label='Test Accuracy')
+plt.legend()
+
+plt.subplot(3, 2, (3, 6))
 linspace = np.linspace(x_min, x_max, 300)
 xv, yv = np.meshgrid(linspace, linspace)
 inputs = np.stack([xv.flatten(), yv.flatten()], axis=1)

@@ -1,5 +1,5 @@
 __all__ = ['dz', 'functions', 'layers', 'models',
-           'optimizers', 'utils', 'transforms', 'datasets']
+           'optimizers', 'utils', 'transforms', 'datasets', 'metrics']
 import sys
 import os
 
@@ -13,3 +13,4 @@ import dezero.optimizers as optimizers  # nopep8
 import dezero.utils as utils  # nopep8
 import dezero.transforms as transforms  # nopep8
 import dezero.datasets as datasets  # nopep8
+import dezero.metrics as metrics  # nopep8
