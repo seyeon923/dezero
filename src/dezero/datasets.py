@@ -1,5 +1,6 @@
 """Copied from https://github.com/oreilly-japan/deep-learning-from-scratch-3/blob/master/dezero/datasets.py"""
 import os
+import math
 import gzip
 import tarfile
 import pickle
@@ -334,3 +335,44 @@ def save_cache_npz(data, label, filename, train=False):
         raise
     print(" Done")
     return filepath
+
+
+class DataLoader:
+    def __init__(self, dataset: Dataset, batch_size: int, shuffle: bool = True):
+        self.__dataset = dataset
+        self.__batch_size = batch_size
+        self.__shuffle = shuffle
+        self.__data_size = len(dataset)
+        self.__max_iter = math.ceil(self.__data_size / batch_size)
+
+        self.reset()
+
+    def reset(self):
+        self.__iteration = 0
+
+        if self.__shuffle:
+            self.__idx = np.random.permutation(self.__data_size)
+        else:
+            self.__idx = np.arange(self.__data_size)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.__iteration >= self.__max_iter:
+            self.reset()
+            raise StopIteration
+
+        i, batch_size = self.__iteration, self.__batch_size
+
+        batch_idx = self.__idx[i*batch_size: (i+1)*batch_size]
+        batch = [self.__dataset[i] for i in batch_idx]
+
+        x = np.array([ex[0] for ex in batch])
+        t = np.array([ex[1] for ex in batch])
+
+        self.__iteration += 1
+        return x, t
+
+    def next(self):
+        return next(self)
