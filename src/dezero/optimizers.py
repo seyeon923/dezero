@@ -60,6 +60,29 @@ class MomentumSGD(Optimizer):
         param.data += v
 
 
+class RMSprop(Optimizer):
+    def __init__(self, lr=0.01, beta=0.99):
+        super().__init__()
+
+        self.lr = lr
+        self.beta = beta
+
+        self.__s = {}
+
+    def update_one(self, param):
+        s_key = id(param)
+        if s_key not in self.__s:
+            self.__s[s_key] = np.zeros_like(param.data)
+
+        s = self.__s[s_key]
+
+        grad = param.grad.data
+
+        s = (self.beta * s) + (1 - self.beta) * grad * grad
+
+        param.data -= self.lr * grad / np.sqrt(s)
+
+
 class Adam(Optimizer):
     def __init__(self, lr=0.01, beta1=0.9, beta2=0.999, epsilon=1e-8):
         super().__init__()
